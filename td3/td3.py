@@ -17,7 +17,7 @@ class TD3Agent(object):
         self._action_space = action_space
         self._action_n = action_space.shape[0]
         
-        self.config = {
+        self._config = {
             "eps": 0.1,
             "actor_lr": 0.00001,
             "critic_lr": 0.0001,
@@ -51,20 +51,20 @@ class TD3Agent(object):
         self.Q_net_1 = QFunction(observation_dim=self._observation_space.shape[0], 
                                action_dim=self._action_n, 
                                hidden_dims=self._config["hidden_dim_critic"],
-                               learning_rate=self._config["critic_lr"])
+                               lr=self._config["critic_lr"])
         self.Q_net_2 = QFunction(observation_dim=self._observation_space.shape[0],
                                  action_dim=self._action_n, 
                                  hidden_dims=self._config["hidden_dim_critic"],
-                                 learning_rate=self._config["critic_lr"])
+                                 lr=self._config["critic_lr"])
         self.Q_target_1 = QFunction(observation_dim=self._observation_space.shape[0],
                                     action_dim=self._action_n, 
                                     hidden_dims=self._config["hidden_dim_critic"],
-                                    learning_rate= 0)
+                                    lr= 0)
         
         self.Q_target_2 = QFunction(observation_dim=self._observation_space.shape[0],
                                     action_dim=self._action_n,
                                     hidden_dims=self._config["hidden_dim_critic"],
-                                    learning_rate= 0)
+                                    lr= 0)
         self.policy_net = FeedForwardNetwork(input_dim=self._observation_space.shape[0],
                                                hidden_dims=self._config["hidden_dim_actor"],
                                                output_dim=self._action_n,
@@ -110,7 +110,7 @@ class TD3Agent(object):
         self.policy_net.load_state_dict(state[2])
         self._copy_nets()
         
-    def _sliding_update(self, target, source):
+    def _sliding_update(self, target: torch.nn.Module, source: torch.nn.Module):
         for target_param, param in zip(target.parameters(), source.parameters()):
             target_param.data.copy_(self._config["tau"] * param.data + (1.0 - self._config["tau"]) * target_param.data)
             
@@ -122,15 +122,19 @@ class TD3Agent(object):
         
         for _ in range(iter_fit):
             transitions = self.replay_buffer.sample(self._config["batch_size"])
-            s = to_torch(transitions[:,0])
-            a = to_torch(transitions[:,1])
-            r = to_torch(transitions[:,2])[:,None]
-            s_prime = to_torch(transitions[:,3])
-            done = to_torch(transitions[:,4])[:,None]
+            s = to_torch(np.stack(transitions[:,0]))
+            a = to_torch(np.stack(transitions[:,1]))
+            r = to_torch(np.stack(transitions[:,2])[:,None])
+            s_prime = to_torch(np.stack(transitions[:,3]))
+            done = to_torch(np.stack(transitions[:,4])[:,None])
             
             a_prime = self.policy_target.forward(s_prime)
             noise = torch.clamp(torch.randn(a_prime.shape) * self._config["policy_noise"], -self._noise_clamp, self._noise_clamp)
-            a_prime += noise 
+            # Question: Do I clamp here again to range action_space.low and action_space.high?
+            # Question: How to apply pink noise in own model?
+            
+            
+            a_prime = torch.clamp(a_prime + noise, self._action_space.low[0], self._action_space.high[0])
             q_prime_1 = self.Q_target_1.Q_value(observations=s_prime, actions= a_prime)
             q_prime_2 = self.Q_target_2.Q_value(observations=s_prime, actions= a_prime)
             
@@ -159,9 +163,3 @@ class TD3Agent(object):
                 
                 
         return losses
-                
-            
-            
-            
-            
-        

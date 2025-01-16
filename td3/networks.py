@@ -19,7 +19,7 @@ class FeedForwardNetwork(torch.nn.Module):
             x = act_fn(layer(x))
         x = self.readout(x)
         if self.output_activation is not None:
-            x = self.output_activation(x)
+            x = self.output_activation(x) # Question: Tanh in output layer for TD3?
         return x
     
     def predict(self, x):
@@ -40,7 +40,7 @@ class QFunction(FeedForwardNetwork):
         
         pred = self.forward(torch.cat([observations, actions], dim=1))
         
-        loss = self.loss(pred, targets)
+        loss = self.loss(pred, targets.detach())
         
         loss.backward()
         self.optimizer.step()
