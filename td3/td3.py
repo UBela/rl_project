@@ -1,11 +1,9 @@
 import torch
-import torch.nn as nn
-from torch.distributions import MultivariateNormal
-import gymnasium as gym
 import numpy as np
-from noise import OUNoise, GaussianNoise
-from networks import QFunction, FeedForwardNetwork
+from networks import Critic_Net, Actor_Net
 from replay_buffer import ReplayBuffer
+import pink
+import torch.nn.functional as F
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.set_num_threads(1)
@@ -18,96 +16,91 @@ class TD3Agent(object):
         self._action_n = action_space.shape[0]
         
         self._config = {
-            "eps": 0.1,
-            "actor_lr": 0.00001,
-            "critic_lr": 0.0001,
-            "discount": 0.95,
+            "actor_lr": 0.0003,
+            "critic_lr": 0.0003,
+            "discount": 0.999,
             "tau": 0.005,
-            "policy_noise": 0.2,
-            "noise_clip": 0.5,
-            "policy_freq": 2,
-            "batch_size": 100,
-            "hidden_dim_critic": [128, 128,64],
-            "hidden_dim_actor": [128, 128],
+            "batch_size": 128,
+            "hidden_dim_critic": [256, 256],
+            "hidden_dim_actor": [256, 256],
             "noise": "Gaussian",
-            "noise_clip": 0.5,
-            "noise_std":0.2,
+            "noise_clip": 0.3,
+            "noise_std": 0.2,
             "policy_update_freq": 2,
-            "update_target_freq": 100,
             "buffer_size": int(1e6),
-            "max_sigma": 1.0,
-            "min_sigma": 1.0,
-            "decay_period": int(1e6)
+            "exploration_steps": 2000,
+            
         }
         
         self._config.update(userconfig)    
-        self._eps = self._config["eps"]
         self._noise_clamp = self._config["noise_clip"]
-        self._max_sigma = self._config["max_sigma"]
-        self._min_sigma = self._config["min_sigma"]
-        self._decay_period = self._config["decay_period"]   
+    
         self.replay_buffer = ReplayBuffer(max_size=self._config["buffer_size"])
         
-        self.Q_net_1 = QFunction(observation_dim=self._observation_space.shape[0], 
-                               action_dim=self._action_n, 
-                               hidden_dims=self._config["hidden_dim_critic"],
-                               lr=self._config["critic_lr"])
-        self.Q_net_2 = QFunction(observation_dim=self._observation_space.shape[0],
-                                 action_dim=self._action_n, 
-                                 hidden_dims=self._config["hidden_dim_critic"],
-                                 lr=self._config["critic_lr"])
-        self.Q_target_1 = QFunction(observation_dim=self._observation_space.shape[0],
-                                    action_dim=self._action_n, 
-                                    hidden_dims=self._config["hidden_dim_critic"],
-                                    lr= 0)
+        self.critic_net = Critic_Net(
+            observation_dim=self._observation_space.shape[0], 
+            action_dim=self._action_n, 
+            hidden_dims=self._config["hidden_dim_critic"],
+            lr=self._config["critic_lr"]
+        )
+        self.critic_net_target = Critic_Net(
+            observation_dim=self._observation_space.shape[0],
+            action_dim=self._action_n, 
+            hidden_dims=self._config["hidden_dim_critic"],
+            lr=0  # No optimizer for the target network
+        )
         
-        self.Q_target_2 = QFunction(observation_dim=self._observation_space.shape[0],
-                                    action_dim=self._action_n,
-                                    hidden_dims=self._config["hidden_dim_critic"],
-                                    lr= 0)
-        self.policy_net = FeedForwardNetwork(input_dim=self._observation_space.shape[0],
-                                               hidden_dims=self._config["hidden_dim_actor"],
-                                               output_dim=self._action_n,
-                                               out_act_fn=torch.nn.Tanh(),
-                                               act_fn=torch.nn.ReLU(),
-                                               )
-        
-        self.policy_target = FeedForwardNetwork(input_dim=self._observation_space.shape[0],
-                                                    hidden_dims=self._config["hidden_dim_actor"],
-                                                    output_dim=self._action_n,
-                                                    out_act_fn=torch.nn.Tanh(),
-                                                    act_fn=torch.nn.ReLU(),
-                                                    )
+        self.actor_net = Actor_Net(
+            input_dim=self._observation_space.shape[0],
+            hidden_dims=self._config["hidden_dim_actor"],
+            output_dim=self._action_n,
+            lr=self._config["actor_lr"]
+        )
+        self.actor_net_target = Actor_Net(
+            input_dim=self._observation_space.shape[0],
+            hidden_dims=self._config["hidden_dim_actor"],
+            output_dim=self._action_n,
+            lr=0  # No optimizer for the target network
+        )
         
         self._copy_nets()
         
-        self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=self._config["actor_lr"], eps=1e-6)
-        
         self.train_iter = 0 
+        self.total_steps = 0
         
     def _copy_nets(self):
-        self.Q_target_1.load_state_dict(self.Q_net_1.state_dict())
-        self.Q_target_2.load_state_dict(self.Q_net_2.state_dict())
-        self.policy_target.load_state_dict(self.policy_net.state_dict())
+        self.critic_net_target.load_state_dict(self.critic_net.state_dict())
+        self.actor_net_target.load_state_dict(self.actor_net.state_dict())
         
-    def get_action(self, observation, t=0):
-        action = self.policy_net.predict(observation)
-        sigma = self._max_sigma - ((self._max_sigma - self._min_sigma) * min(t / self._decay_period, 1.0))
-        action = action + np.random.normal(size=action.shape) * sigma
-        return np.clip(action, self._action_space.low, self._action_space.high)
+    def get_action(self, observation):
+        #print(self.total_steps)
+
+        if self.total_steps < self._config["exploration_steps"]:
+            action = self._action_space.sample()
             
-    def store_transition(self, transition):
+        else:
+            state = torch.from_numpy(observation.astype(np.float32)).to(device)
+            action = self.actor_net.forward(state)
+            action = action.cpu().detach().numpy()[0]
+            
+            # Add Gaussian noise to the action
+            noise = np.random.normal(0, self._config["noise_std"], size=self._action_n)
+            
+            action = action + noise
+            action = np.clip(action, -1, 1)
+            
+        self.total_steps += 1
+        return action
+            
+    def store_transition(self, transition: tuple):
         self.replay_buffer.add_transition(transition)
         
     def state(self):
-        return (self.Q_net_1.state_dict(),
-                self.Q_net_2.state_dict(),
-                self.policy_net.state_dict())
+        return self.critic_net.state_dict(), self.actor_net.state_dict()
     
     def restore_state(self, state):
-        self.Q_net_1.load_state_dict(state[0])
-        self.Q_net_2.load_state_dict(state[1])
-        self.policy_net.load_state_dict(state[2])
+        self.critic_net.load_state_dict(state[0])
+        self.actor_net.load_state_dict(state[1])
         self._copy_nets()
         
     def _sliding_update(self, target: torch.nn.Module, source: torch.nn.Module):
@@ -115,51 +108,61 @@ class TD3Agent(object):
             target_param.data.copy_(self._config["tau"] * param.data + (1.0 - self._config["tau"]) * target_param.data)
             
     def train(self, iter_fit: int = 32):
-        
         to_torch = lambda x: torch.from_numpy(x.astype(np.float32))
         losses = [] 
         self.train_iter += 1
         
         for _ in range(iter_fit):
-            transitions = self.replay_buffer.sample(self._config["batch_size"])
-            s = to_torch(np.stack(transitions[:,0]))
-            a = to_torch(np.stack(transitions[:,1]))
-            r = to_torch(np.stack(transitions[:,2])[:,None])
-            s_prime = to_torch(np.stack(transitions[:,3]))
-            done = to_torch(np.stack(transitions[:,4])[:,None])
+            transitions = self.replay_buffer.sample(batch_size=self._config["batch_size"])
+            s = to_torch(np.stack(transitions[:, 0]))
+            a = to_torch(np.stack(transitions[:, 1]))
+            r = to_torch(np.stack(transitions[:, 2])[:, None])
+            s_prime = to_torch(np.stack(transitions[:, 3]))
+            done = to_torch(np.stack(transitions[:, 4])[:, None])
             
-            a_prime = self.policy_target.forward(s_prime)
-            noise = torch.clamp(torch.randn(a_prime.shape) * self._config["policy_noise"], -self._noise_clamp, self._noise_clamp)
-            # Question: Do I clamp here again to range action_space.low and action_space.high?
-            # Question: How to apply pink noise in own model?
+            a_prime = self.actor_net_target.forward(s_prime)
+            noise = torch.clamp(torch.randn(a_prime.shape) * self._config["noise_std"], -self._noise_clamp, self._noise_clamp)
+            #print("action space", self._action_space.low, self._action_space.high)
+            #print("action_n", self._action_n)
+
+            a_prime = torch.clamp(a_prime + noise, -1, 1)
             
+            # Get Q-values from the target Q-function
+            q1_prime, q2_prime = self.critic_net_target.forward(torch.cat([s_prime, a_prime], dim=1))
             
-            a_prime = torch.clamp(a_prime + noise, self._action_space.low[0], self._action_space.high[0])
-            q_prime_1 = self.Q_target_1.Q_value(observations=s_prime, actions= a_prime)
-            q_prime_2 = self.Q_target_2.Q_value(observations=s_prime, actions= a_prime)
-            
-            q_prime = torch.min(q_prime_1, q_prime_2)
-            
+            q_prime_min = torch.min(q1_prime, q2_prime)
+            #print("qprime min",q_prime_min)
             gamma = self._config["discount"]
-            td_target = r + gamma * (1 - done) * q_prime
+            td_target = r + gamma * (1 - done) * q_prime_min
             
-            fit_loss_1 = self.Q_net_1.fit(observations=s, actions=a, targets=td_target)
-            fit_loss_2 = self.Q_net_2.fit(observations=s, actions=a, targets=td_target)
+            # Update critic_net
+            q1, q2 = self.critic_net.forward(torch.cat([s, a], dim=1))
+            #q1, q2 = q1.squeeze(dim=1), q2.squeeze(dim=1)
             
+            critic_loss = F.mse_loss(q1, td_target) + F.mse_loss(q2, td_target)
+            
+            self.critic_net.optimizer.zero_grad()
+            critic_loss.backward()
+            self.critic_net.optimizer.step()
+            
+            # Policy update
             if self.train_iter % self._config["policy_update_freq"] == 0:
-                self.optimizer.zero_grad()
-                q = self.Q_net_1.Q_value(observations=s, actions=self.policy_net.forward(s))
-                actor_loss = -q.mean()
+                
+                q1 = self.critic_net.Q_value(s, self.actor_net.forward(s))
+                actor_loss = -q1.mean()
+                self.actor_net.optimizer.zero_grad()
                 actor_loss.backward()
-                self.optimizer.step()
+                self.actor_net.optimizer.step()
                 
-                self._sliding_update(self.Q_target_1, self.Q_net_1)
-                self._sliding_update(self.Q_target_2, self.Q_net_2)
-                self._sliding_update(self.policy_target, self.policy_net)
+                # Update target networks
+                self._sliding_update(self.critic_net_target, self.critic_net)
+                self._sliding_update(self.actor_net_target, self.actor_net)
                 
-                losses.append((fit_loss_1, fit_loss_2, actor_loss.item()))
+                losses.append((critic_loss.item(), actor_loss.item()))
             else:
-                losses.append((fit_loss_1, fit_loss_2, None))
-                
+                losses.append((critic_loss.item(), None))
                 
         return losses
+
+
+
