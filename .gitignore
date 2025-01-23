@@ -5,6 +5,10 @@ __pycache__/
 
 # C extensions
 *.so
+# dont upload pngs, pth and pickle files
+*.png
+*.pkl
+*.pth
 
 # Distribution / packaging
 .Python
