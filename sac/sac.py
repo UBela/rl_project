@@ -1,12 +1,10 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import numpy as np
 from torch.distributions import Normal
-import gymnasium as gym
 
-# Replay Buffer
 class ReplayBuffer:
     def __init__(self, capacity):
         self.capacity = capacity
@@ -33,7 +31,6 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.buffer)
 
-# Networks
 class ValueNetwork(nn.Module):
     def __init__(self, state_dim, hidden_dim):
         super(ValueNetwork, self).__init__()
@@ -45,7 +42,6 @@ class ValueNetwork(nn.Module):
         x = F.relu(self.linear1(state))
         x = F.relu(self.linear2(x))
         return self.linear3(x)
-
 
 class SoftQNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_dim):
@@ -59,7 +55,6 @@ class SoftQNetwork(nn.Module):
         x = F.relu(self.linear1(x))
         x = F.relu(self.linear2(x))
         return self.linear3(x)
-
 
 class PolicyNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_dim):
@@ -87,7 +82,6 @@ class PolicyNetwork(nn.Module):
         log_prob = log_prob.sum(dim=-1, keepdim=True)
         return action, log_prob
 
-# SAC Agent
 class SACAgent:
     def __init__(
         self,
@@ -100,16 +94,13 @@ class SACAgent:
         policy_lr=3e-4,
         q_lr=3e-4,
         value_lr=3e-4,
-        device=None,
+        device="cpu",
     ):
-        # Set device
-        self.device = device if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
         self.gamma = gamma
         self.tau = tau
         self.alpha = alpha
+        self.device = device
 
-        # Initialize networks
         self.value_net = ValueNetwork(state_dim, hidden_dim).to(self.device)
         self.target_value_net = ValueNetwork(state_dim, hidden_dim).to(self.device)
         self.soft_q_net1 = SoftQNetwork(state_dim, action_dim, hidden_dim).to(self.device)
@@ -121,7 +112,6 @@ class SACAgent:
         self.soft_q_optimizer2 = optim.Adam(self.soft_q_net2.parameters(), lr=q_lr)
         self.policy_optimizer = optim.Adam(self.policy_net.parameters(), lr=policy_lr)
 
-        # Initialize target value network
         for target_param, param in zip(
             self.target_value_net.parameters(), self.value_net.parameters()
         ):
@@ -129,25 +119,19 @@ class SACAgent:
 
     def update(self, replay_buffer, batch_size):
         state, action, reward, next_state, done = replay_buffer.sample(batch_size)
-
         state = torch.FloatTensor(state).to(self.device)
         next_state = torch.FloatTensor(next_state).to(self.device)
         action = torch.FloatTensor(action).to(self.device)
         reward = torch.FloatTensor(reward).unsqueeze(1).to(self.device)
         done = torch.FloatTensor(done).unsqueeze(1).to(self.device)
 
-        # Value loss
-        expected_q1 = self.soft_q_net1(state, action)
-        expected_q2 = self.soft_q_net2(state, action)
-        expected_value = self.value_net(state)
-        new_action, log_prob = self.policy_net.sample(state)
-
+        # Q-Value Loss
         target_value = self.target_value_net(next_state)
         next_q_value = reward + (1 - done) * self.gamma * target_value
-        q1_loss = F.mse_loss(expected_q1, next_q_value.detach())
-        q2_loss = F.mse_loss(expected_q2, next_q_value.detach())
+        q1_loss = F.mse_loss(self.soft_q_net1(state, action), next_q_value.detach())
+        q2_loss = F.mse_loss(self.soft_q_net2(state, action), next_q_value.detach())
 
-        # Update Q Networks
+        # Update Q-Networks
         self.soft_q_optimizer1.zero_grad()
         q1_loss.backward()
         self.soft_q_optimizer1.step()
@@ -156,24 +140,30 @@ class SACAgent:
         q2_loss.backward()
         self.soft_q_optimizer2.step()
 
-        expected_new_q = torch.min(
-            self.soft_q_net1(state, new_action), self.soft_q_net2(state, new_action)
+        # Policy Loss
+        new_action, log_prob = self.policy_net.sample(state)
+        q_value = torch.min(
+            self.soft_q_net1(state, new_action),
+            self.soft_q_net2(state, new_action),
         )
+        policy_loss = (log_prob * self.alpha - q_value).mean()
+
+        # Update Policy Network
+        self.policy_optimizer.zero_grad()
+        policy_loss.backward()
+        self.policy_optimizer.step()
+
+        # Value Loss
+        expected_value = self.value_net(state)
         value_loss = F.mse_loss(
-            expected_value, (expected_new_q - log_prob * self.alpha).detach()
+            expected_value,
+            (q_value - log_prob * self.alpha).detach(),
         )
 
         # Update Value Network
         self.value_optimizer.zero_grad()
         value_loss.backward()
         self.value_optimizer.step()
-
-        policy_loss = (log_prob * (log_prob * self.alpha - expected_new_q)).mean()
-
-        # Update Policy Network
-        self.policy_optimizer.zero_grad()
-        policy_loss.backward()
-        self.policy_optimizer.step()
 
         # Update Target Value Network
         for target_param, param in zip(
