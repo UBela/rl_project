@@ -45,7 +45,7 @@ class TD3Trainer:
         log_interval = self.config['log_interval']
         max_episodes = self.config['max_episodes']
         max_timesteps = self.config['max_timesteps']
-
+        render = self.config['render']
         random_seed = self.config['random_seed']
         
         rewards = []
@@ -71,7 +71,7 @@ class TD3Trainer:
                 a1 = agent.get_action(ob)
                 a2 = opponent.get_action(obs_agent2)
                 (ob_new, reward, done, trunc, _info) = env.step(np.hstack[a1, a2])  
-                
+                if render: env.render()
                 agent.store_transition((ob, a1, reward, ob_new, done))
                 total_reward += reward
                 ob = ob_new

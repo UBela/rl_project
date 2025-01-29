@@ -42,26 +42,26 @@ class TD3Agent(object):
             action_dim=self._action_n, 
             hidden_dims=self._config["hidden_dim_critic"],
             lr=self._config["critic_lr"]
-        )
+        ).to(device)
         self.critic_net_target = Critic_Net(
             observation_dim=self._observation_space.shape[0],
             action_dim=self._action_n, 
             hidden_dims=self._config["hidden_dim_critic"],
             lr=0  # No optimizer for the target network
-        )
+        ).to(device)
         
         self.actor_net = Actor_Net(
             input_dim=self._observation_space.shape[0],
             hidden_dims=self._config["hidden_dim_actor"],
             output_dim=self._action_n,
             lr=self._config["actor_lr"]
-        )
+        ).to(device)
         self.actor_net_target = Actor_Net(
             input_dim=self._observation_space.shape[0],
             hidden_dims=self._config["hidden_dim_actor"],
             output_dim=self._action_n,
             lr=0  # No optimizer for the target network
-        )
+        ).to(device)
         
         self._copy_nets()
         
@@ -114,14 +114,14 @@ class TD3Agent(object):
         
         for _ in range(iter_fit):
             transitions = self.replay_buffer.sample(batch_size=self._config["batch_size"])
-            s = to_torch(np.stack(transitions[:, 0]))
-            a = to_torch(np.stack(transitions[:, 1]))
-            r = to_torch(np.stack(transitions[:, 2])[:, None])
-            s_prime = to_torch(np.stack(transitions[:, 3]))
-            done = to_torch(np.stack(transitions[:, 4])[:, None])
+            s = to_torch(np.stack(transitions[:, 0])).to(device)
+            a = to_torch(np.stack(transitions[:, 1])).to(device)
+            r = to_torch(np.stack(transitions[:, 2])[:, None]).to(device)
+            s_prime = to_torch(np.stack(transitions[:, 3])).to(device)
+            done = to_torch(np.stack(transitions[:, 4])[:, None]).to(device)
             
-            a_prime = self.actor_net_target.forward(s_prime)
-            noise = torch.clamp(torch.randn(a_prime.shape) * self._config["noise_std"], -self._noise_clamp, self._noise_clamp)
+            a_prime = self.actor_net_target.forward(s_prime).to(device)
+            noise = torch.clamp(torch.randn(a_prime.shape) * self._config["noise_std"], -self._noise_clamp, self._noise_clamp).to(device)
             #print("action space", self._action_space.low, self._action_space.high)
             #print("action_n", self._action_n)
 
@@ -130,15 +130,15 @@ class TD3Agent(object):
             # Get Q-values from the target Q-function
             q1_prime, q2_prime = self.critic_net_target.forward(torch.cat([s_prime, a_prime], dim=1))
             
-            q_prime_min = torch.min(q1_prime, q2_prime)
+            q_prime_min = torch.min(q1_prime, q2_prime).to(device)
             #print("qprime min",q_prime_min)
             gamma = self._config["discount"]
             td_target = r + gamma * (1 - done) * q_prime_min
-            
+            td_target = td_target.to(device)
             # Update critic_net
             q1, q2 = self.critic_net.forward(torch.cat([s, a], dim=1))
             #q1, q2 = q1.squeeze(dim=1), q2.squeeze(dim=1)
-            
+            q1, q2 = q1.to(device), q2.to(device)
             critic_loss = F.mse_loss(q1, td_target) + F.mse_loss(q2, td_target)
             
             self.critic_net.optimizer.zero_grad()
