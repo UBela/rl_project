@@ -1,10 +1,5 @@
 import torch
-from td3 import TD3
-import os 
-import gymnasium as gym
 import numpy as np
-from hockey import HockeyEnv as h_env
-import optparse
 import pickle
 
 
@@ -65,12 +60,12 @@ class TD3Trainer:
             loses_per_episode[i_episode] = 0
             
             opponent = self._select_opponent(opponents, i_episode)
-                
+            
             for t in range(max_timesteps):
                 
                 a1 = agent.get_action(ob)
                 a2 = opponent.act(obs_agent2)
-                (ob_new, reward, done, trunc, _info) = env.step(np.hstack[a1, a2])  
+                (ob_new, reward, done, trunc, _info) = env.step(np.hstack([a1, a2]))  
                 if render: env.render()
                 agent.store_transition((ob, a1, reward, ob_new, done))
                 total_reward += reward
