@@ -69,7 +69,7 @@ class TD3Trainer:
             for t in range(max_timesteps):
                 
                 a1 = agent.get_action(ob)
-                a2 = opponent.get_action(obs_agent2)
+                a2 = opponent.act(obs_agent2)
                 (ob_new, reward, done, trunc, _info) = env.step(np.hstack[a1, a2])  
                 if render: env.render()
                 agent.store_transition((ob, a1, reward, ob_new, done))
