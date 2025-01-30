@@ -2,7 +2,6 @@ import torch
 import numpy as np
 from networks import Critic_Net, Actor_Net
 from replay_buffer import ReplayBuffer
-import pink
 import torch.nn.functional as F
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
