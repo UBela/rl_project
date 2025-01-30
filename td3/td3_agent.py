@@ -77,11 +77,10 @@ class TD3Agent(object):
         if self.total_steps < self._config["exploration_steps"]:
             # random action of shape (self._action_n,) bounded by low and high
             action = np.random.uniform(self._action_space.low[0], self._action_space.high[0], size=self._action_n)
-            action = action.cpu().detach().numpy()[0]
         else:
             state = torch.from_numpy(observation.astype(np.float32)).to(device)
             action = self.actor_net.forward(state)
-            action = action.cpu().detach().numpy()[0]
+            action = action.cpu().detach().numpy()
             # Add Gaussian noise to the action
             noise = np.random.normal(0, self._config["noise_std"], size=self._action_n)
             action = action + noise
