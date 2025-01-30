@@ -15,7 +15,7 @@ class TD3Trainer:
         self.config = config
     
     def _save_statistics(self, rewards, lengths, losses, wins_per_episode, loses_per_episode, train_iter):
-        with open(f"td3/results/results_td3_t{train_iter}_stats.pkl", "wb") as f:
+        with open(f"{self.config['results_folder']}/results_td3_t{train_iter}_stats.pkl", "wb") as f:
             pickle.dump({"rewards": rewards, "lengths": lengths, "losses": losses, "wins": wins_per_episode, "loses": loses_per_episode}, f)
     
     def _select_opponent(self, opponents: list, episode: int):
@@ -54,6 +54,7 @@ class TD3Trainer:
         curriculum_learning = self.config['use_curr_learning']  
         use_hard_opp = self.config['use_hard_opp']
         evaluate_every = self.config['evaluate_every']
+         
         
         self_play_buffer = []
         rewards = []
@@ -134,7 +135,7 @@ class TD3Trainer:
             
             if i_episode % 500 == 0:
                 print("########## Saving a checkpoint... ##########")
-                torch.save(agent.state(), f'td3/results/td3_{i_episode}-t{iter_fit}-s{random_seed}.pth')
+                torch.save(agent.state(), f'{self.config['results_folder']}/td3_{i_episode}-t{iter_fit}-s{random_seed}.pth')
                 self._save_statistics(rewards, lengths, losses, wins_per_episode, loses_per_episode, iter_fit)
                 
             if i_episode % log_interval == 0:

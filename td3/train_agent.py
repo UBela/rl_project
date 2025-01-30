@@ -27,6 +27,8 @@ optParser.add_option("--render", action="store_true", default=False)
 optParser.add_option("--use_hard_opp", action="store_true", default=True)
 optParser.add_option("--use_curr_learning", action="store_true", default=False)
 optParser.add_option("--evaluate_every", type=int, default=2000)
+optParser.add_option("--results_folder", type=str, default="/home/stud311/work/rl_project/td3/results")
+
 # agent parameters
 optParser.add_option("--actor_lr", type=float, default=0.0001)
 optParser.add_option("--critic_lr", type=float, default=0.0001)
