@@ -13,8 +13,7 @@ class TD3Agent(object):
         
         self._observation_space = observation_space
         self._action_space = action_space
-        self._action_n = action_space.shape[0]
-        
+        self._action_n = action_space.shape[0] //2 # agent should output action of shape (4,)
         self._config = {
             "actor_lr": 0.0003,
             "critic_lr": 0.0003,
@@ -68,32 +67,33 @@ class TD3Agent(object):
         self.train_iter = 0 
         self.total_steps = 0
         
+       
+        
     def _copy_nets(self):
         self.critic_net_target.load_state_dict(self.critic_net.state_dict())
         self.actor_net_target.load_state_dict(self.actor_net.state_dict())
         
     def get_action(self, observation):
         #print(self.total_steps)
-
         if self.total_steps < self._config["exploration_steps"]:
-            action = self._action_space.sample()
-            
+            # random action of shape (self._action_n,) bounded by low and high
+            action = np.random.uniform(self._action_space.low[0], self._action_space.high[0], size=self._action_n)
+            action = torch.from_numpy(action.astype(np.float32)).to(device)
         else:
             state = torch.from_numpy(observation.astype(np.float32)).to(device)
             action = self.actor_net.forward(state)
             action = action.cpu().detach().numpy()[0]
-            
             # Add Gaussian noise to the action
             noise = np.random.normal(0, self._config["noise_std"], size=self._action_n)
-            
             action = action + noise
-            action = np.clip(action, -1, 1)
+            action = np.clip(action, self._action_space.low[0], self._action_space.high[0])
             
         self.total_steps += 1
         return action
             
     def store_transition(self, transition: tuple):
         self.replay_buffer.add_transition(transition)
+    
         
     def state(self):
         return self.critic_net.state_dict(), self.actor_net.state_dict()
@@ -102,6 +102,19 @@ class TD3Agent(object):
         self.critic_net.load_state_dict(state[0])
         self.actor_net.load_state_dict(state[1])
         self._copy_nets()
+    
+    def set_to_train(self):
+        self.actor_net.train()
+        self.critic_net.train()
+        self.actor_net_target.train()
+        self.critic_net_target.train()
+        
+    def set_to_eval(self):
+        self.actor_net.eval()
+        self.critic_net.eval()
+        self.actor_net_target.eval()
+        self.critic_net_target.eval()
+        
         
     def _sliding_update(self, target: torch.nn.Module, source: torch.nn.Module):
         for target_param, param in zip(target.parameters(), source.parameters()):

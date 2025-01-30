@@ -8,7 +8,7 @@ from trainer import TD3Trainer
 import torch
 from hockey import hockey_env as h_env
 import optparse
-from utils import RandomAgent
+from td3.utils import RandomAgent
 import sys
 
 
@@ -24,7 +24,9 @@ optParser.add_option("--iter_fit", type=int, default=32)
 optParser.add_option("--log_interval", type=int, default=20)
 optParser.add_option("--random_seed", type=int, default=None)
 optParser.add_option("--render", action="store_true", default=False)
-optParser.add_option("--use_hard_opp", action="store_true", default=False)
+optParser.add_option("--use_hard_opp", action="store_true", default=True)
+optParser.add_option("--use_curr_learning", action="store_true", default=False)
+optParser.add_option("--evaluate_every", type=int, default=2000)
 # agent parameters
 optParser.add_option("--actor_lr", type=float, default=0.0001)
 optParser.add_option("--critic_lr", type=float, default=0.0001)
