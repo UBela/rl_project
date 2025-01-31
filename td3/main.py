@@ -1,7 +1,7 @@
 import torch
 import gymnasium as gym
 import numpy as np
-from td3 import TD3Agent
+from td3_agent import TD3Agent
 import pickle
 import matplotlib.pyplot as plt
 from DDPG import DDPGAgent
