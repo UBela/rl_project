@@ -4,7 +4,9 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.distributions import Normal
+import copy
 
+# ----------------- 🎯 Replay Buffer -----------------
 class ReplayBuffer:
     def __init__(self, capacity):
         self.capacity = capacity
@@ -31,6 +33,8 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.buffer)
 
+
+# ----------------- 🔥 Netzwerke -----------------
 class ValueNetwork(nn.Module):
     def __init__(self, state_dim, hidden_dim):
         super(ValueNetwork, self).__init__()
@@ -42,6 +46,7 @@ class ValueNetwork(nn.Module):
         x = F.relu(self.linear1(state))
         x = F.relu(self.linear2(x))
         return self.linear3(x)
+
 
 class SoftQNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_dim):
@@ -55,6 +60,7 @@ class SoftQNetwork(nn.Module):
         x = F.relu(self.linear1(x))
         x = F.relu(self.linear2(x))
         return self.linear3(x)
+
 
 class PolicyNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_dim):
@@ -82,6 +88,8 @@ class PolicyNetwork(nn.Module):
         log_prob = log_prob.sum(dim=-1, keepdim=True)
         return action, log_prob
 
+
+# ----------------- 🚀 SAC Agent -----------------
 class SACAgent:
     def __init__(
         self,
@@ -99,7 +107,7 @@ class SACAgent:
         self.gamma = gamma
         self.tau = tau
         self.alpha = alpha
-        self.device = device
+        self.device = torch.device(device)
 
         self.value_net = ValueNetwork(state_dim, hidden_dim).to(self.device)
         self.target_value_net = ValueNetwork(state_dim, hidden_dim).to(self.device)
@@ -112,10 +120,17 @@ class SACAgent:
         self.soft_q_optimizer2 = optim.Adam(self.soft_q_net2.parameters(), lr=q_lr)
         self.policy_optimizer = optim.Adam(self.policy_net.parameters(), lr=policy_lr)
 
+        # Kopiere die Netzwerkgewichte auf das Target-Netzwerk
         for target_param, param in zip(
             self.target_value_net.parameters(), self.value_net.parameters()
         ):
             target_param.data.copy_(param.data)
+
+    def select_action(self, state, eval=False):
+        state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
+        with torch.no_grad():
+            action, _ = self.policy_net.sample(state)  # Policy wählt eine Aktion
+        return action.cpu().numpy().flatten()
 
     def update(self, replay_buffer, batch_size):
         state, action, reward, next_state, done = replay_buffer.sample(batch_size)
@@ -125,13 +140,13 @@ class SACAgent:
         reward = torch.FloatTensor(reward).unsqueeze(1).to(self.device)
         done = torch.FloatTensor(done).unsqueeze(1).to(self.device)
 
-        # Q-Value Loss
+        # Berechnung des Q-Wertes
         target_value = self.target_value_net(next_state)
         next_q_value = reward + (1 - done) * self.gamma * target_value
         q1_loss = F.mse_loss(self.soft_q_net1(state, action), next_q_value.detach())
         q2_loss = F.mse_loss(self.soft_q_net2(state, action), next_q_value.detach())
 
-        # Update Q-Networks
+        # Update der Q-Netzwerke
         self.soft_q_optimizer1.zero_grad()
         q1_loss.backward()
         self.soft_q_optimizer1.step()
@@ -140,7 +155,7 @@ class SACAgent:
         q2_loss.backward()
         self.soft_q_optimizer2.step()
 
-        # Policy Loss
+        # Berechnung der Policy-Verlustfunktion
         new_action, log_prob = self.policy_net.sample(state)
         q_value = torch.min(
             self.soft_q_net1(state, new_action),
@@ -148,27 +163,28 @@ class SACAgent:
         )
         policy_loss = (log_prob * self.alpha - q_value).mean()
 
-        # Update Policy Network
+        # Update des Policy-Netzwerks
         self.policy_optimizer.zero_grad()
         policy_loss.backward()
         self.policy_optimizer.step()
 
-        # Value Loss
+        # Berechnung des Value-Netzwerk-Verlustes
         expected_value = self.value_net(state)
         value_loss = F.mse_loss(
             expected_value,
             (q_value - log_prob * self.alpha).detach(),
         )
 
-        # Update Value Network
+        # Update des Value-Netzwerks
         self.value_optimizer.zero_grad()
         value_loss.backward()
         self.value_optimizer.step()
 
-        # Update Target Value Network
+        # Update des Target-Value-Netzwerks
         for target_param, param in zip(
             self.target_value_net.parameters(), self.value_net.parameters()
         ):
             target_param.data.copy_(
                 target_param.data * (1 - self.tau) + param.data * self.tau
             )
+
