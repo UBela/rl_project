@@ -74,6 +74,7 @@ class TD3Trainer:
         for i_episode in range(1, max_episodes + 1):
             # 50% chance that the agent is player 1
             agent_is_player_1 = np.random.choice([True, False])
+            agent_is_player_1 = True
             
             ob, _ = env.reset()
             obs_agent2 = env.obs_agent_two()
@@ -132,7 +133,7 @@ class TD3Trainer:
             start_time = time.time()
             losses.extend(agent.train(iter_fit=iter_fit))
             end_time = time.time()
-            print(f"Training time: {end_time - start_time} seconds")
+            #print(f"Training time: {end_time - start_time} seconds")
             
             rewards.append(total_reward)
             lengths.append(t)

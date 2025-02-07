@@ -27,7 +27,7 @@ optParser.add_option("--log_interval", type=int, default=20)
 optParser.add_option("--random_seed", type=int, default=None)
 optParser.add_option("--render", action="store_true", default=False)
 optParser.add_option("--use_hard_opp", action="store_true", default=True)
-optParser.add_option("--use_curr_learning", action="store_true", default=False)
+optParser.add_option("--use_curr_learning", action="store_true", default=True)
 optParser.add_option("--evaluate_every", type=int, default=2000)
 optParser.add_option("--results_folder", type=str, default="/home/stud311/work/rl_project/td3/results")
 
@@ -47,6 +47,9 @@ optParser.add_option("--policy_update_freq", type=int, default=2)
 opts, _ = optParser.parse_args()
 
 if __name__ == '__main__':
+    print("### Start preparation ###")
+    print("### Options ###")
+    print(opts)
     start_prep_time = time.time()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")   
