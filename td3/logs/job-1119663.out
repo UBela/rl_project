@@ -1,0 +1,52 @@
+-------- PYTHON OUTPUT ----------
+Device:  cuda
+Episode 20 	 avg length: 214 	 reward: -5.174947144676603
+Winrate: 0.050 Lossrate: 0.150
+Episode 40 	 avg length: 209 	 reward: -8.94165737322128
+Winrate: 0.075 Lossrate: 0.150
+Episode 60 	 avg length: 173 	 reward: -10.91330903791796
+Winrate: 0.083 Lossrate: 0.217
+Episode 80 	 avg length: 222 	 reward: -4.749665779465458
+Winrate: 0.087 Lossrate: 0.188
+Episode 100 	 avg length: 201 	 reward: -6.761717649291595
+Winrate: 0.080 Lossrate: 0.210
+Episode 120 	 avg length: 188 	 reward: -1.2002080615657102
+Winrate: 0.108 Lossrate: 0.192
+Episode 140 	 avg length: 203 	 reward: -1.4465115620822773
+Winrate: 0.114 Lossrate: 0.186
+Episode 160 	 avg length: 192 	 reward: -9.926912176645356
+Winrate: 0.113 Lossrate: 0.194
+Episode 180 	 avg length: 220 	 reward: -5.165454986020379
+Winrate: 0.111 Lossrate: 0.183
+Episode 200 	 avg length: 190 	 reward: -8.418029973104327
+Winrate: 0.105 Lossrate: 0.200
+Episode 220 	 avg length: 196 	 reward: -6.622817328250297
+Winrate: 0.095 Lossrate: 0.214
+Episode 240 	 avg length: 161 	 reward: -4.047360047198128
+Winrate: 0.104 Lossrate: 0.225
+Episode 260 	 avg length: 172 	 reward: -1.962425281497259
+Winrate: 0.112 Lossrate: 0.223
+Episode 280 	 avg length: 179 	 reward: -3.361692931036547
+Winrate: 0.111 Lossrate: 0.232
+Episode 300 	 avg length: 137 	 reward: -6.91220465207446
+Winrate: 0.113 Lossrate: 0.250
+Episode 320 	 avg length: 163 	 reward: -5.943554262918323
+Winrate: 0.116 Lossrate: 0.259
+Episode 340 	 avg length: 164 	 reward: -3.014301323770421
+Winrate: 0.121 Lossrate: 0.262
+Episode 360 	 avg length: 197 	 reward: -3.9795636187257935
+Winrate: 0.117 Lossrate: 0.258
+Episode 380 	 avg length: 227 	 reward: -3.348580014156031
+Winrate: 0.113 Lossrate: 0.250
+Episode 400 	 avg length: 190 	 reward: -7.367296714027073
+Winrate: 0.110 Lossrate: 0.255
+Episode 420 	 avg length: 179 	 reward: -8.216849134646948
+Winrate: 0.105 Lossrate: 0.264
+Episode 440 	 avg length: 199 	 reward: -9.166091570056638
+Winrate: 0.107 Lossrate: 0.270
+Episode 460 	 avg length: 197 	 reward: -5.138825863020198
+Winrate: 0.109 Lossrate: 0.267
+Episode 480 	 avg length: 217 	 reward: -5.1498073661942305
+Winrate: 0.110 Lossrate: 0.265
+########## Saving a checkpoint... ##########
+Python script failed

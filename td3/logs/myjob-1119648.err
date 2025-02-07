@@ -1,0 +1,16 @@
+ERROR: Unable to locate a modulefile for 'anaconda'
+Traceback (most recent call last):
+  File "/mnt/qb/work/ludwig/lqb122/rl_project/td3/train_agent.py", line 61, in <module>
+    trainer.train(agent, opponents, env)
+  File "/mnt/qb/work/ludwig/lqb122/rl_project/td3/../td3/trainer.py", line 138, in train
+    torch.save(agent.state(), f'{self.config['results_folder']}/td3_{i_episode}-t{iter_fit}-s{random_seed}.pth')
+  File "/home/ludwig/lqb122/.conda/envs/rl_project/lib/python3.12/site-packages/torch/serialization.py", line 943, in save
+    with _open_zipfile_writer(f) as opened_zipfile:
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ludwig/lqb122/.conda/envs/rl_project/lib/python3.12/site-packages/torch/serialization.py", line 810, in _open_zipfile_writer
+    return container(name_or_buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ludwig/lqb122/.conda/envs/rl_project/lib/python3.12/site-packages/torch/serialization.py", line 781, in __init__
+    super().__init__(torch._C.PyTorchFileWriter(self.name, _compute_crc32))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Parent directory /home/stud311/work/rl_project/td3/results does not exist.
