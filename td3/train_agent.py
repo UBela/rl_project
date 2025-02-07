@@ -11,6 +11,7 @@ from hockey import hockey_env as h_env
 import optparse
 from td3.utils import RandomAgent
 import sys
+import time
 
 
 
@@ -46,7 +47,7 @@ optParser.add_option("--policy_update_freq", type=int, default=2)
 opts, _ = optParser.parse_args()
 
 if __name__ == '__main__':
-    
+    start_prep_time = time.time()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")   
     env = h_env.HockeyEnv(h_env.Mode.NORMAL)
@@ -61,7 +62,11 @@ if __name__ == '__main__':
     trainer = TD3Trainer(vars(opts))
     print("### Trainer created ###")
     print("### Start training..... ###")
+    end_prep_time = time.time()
+    print(f"Preparation time: {end_prep_time - start_prep_time} seconds.")
+    start_time = time.time()
     trainer.train(agent, opponents, env)
     
-    
+    end_time = time.time()
+    print(f"Training time: {end_time - start_time} seconds")
 
