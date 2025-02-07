@@ -6,8 +6,10 @@ import torch.nn.functional as F
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device: ", device)
+
+        
 class TD3Agent(object):
-    def __init__(self, observation_space, action_space, **userconfig):
+    def __init__(self, observation_space, action_space, device, **userconfig):
         
         self._observation_space = observation_space
         self._action_space = action_space

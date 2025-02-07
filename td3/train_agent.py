@@ -1,6 +1,7 @@
 import sys
-sys.path.insert(0, '.')
-sys.path.insert(1, '..')
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 
 from td3.td3_agent import TD3Agent
@@ -46,7 +47,8 @@ opts, _ = optParser.parse_args()
 
 if __name__ == '__main__':
     
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")   
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Device: {device}")   
     env = h_env.HockeyEnv(h_env.Mode.NORMAL)
     random_opponent = RandomAgent(env.observation_space, env.action_space)
     weak_opponent = h_env.BasicOpponent(weak=True)
@@ -54,10 +56,11 @@ if __name__ == '__main__':
     
     opponents = [random_opponent, weak_opponent, strong_opponent]
     
-    agent = TD3Agent(env.observation_space, env.action_space, userconfig=vars(opts))
-    
+    agent = TD3Agent(env.observation_space, env.action_space, device=device, userconfig=vars(opts))
+    print("### Agent created ###")
     trainer = TD3Trainer(vars(opts))
-    
+    print("### Trainer created ###")
+    print("### Start training..... ###")
     trainer.train(agent, opponents, env)
     
     
