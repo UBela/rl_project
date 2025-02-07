@@ -21,7 +21,7 @@ class ReplayBuffer:
         self.transitions[self.current_idx, :] = np.asarray(new_transitions, dtype=object)
         self.size = min(self.size + 1, self.max_size)
         self.current_idx = (self.current_idx + 1) % self.max_size  
-
+    
     def sample(self, batch_size: int = 1):
         """
         Sample a batch of transitions from the buffer.
@@ -36,3 +36,7 @@ class ReplayBuffer:
         Retrieve all stored transitions up to the current size.
         """
         return self.transitions[:self.size]
+
+    # get length of buffer
+    def __len__(self):
+        return self.size
