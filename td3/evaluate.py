@@ -1,5 +1,5 @@
 import numpy as np
-from utils import reward_player_2
+from td3.utils import reward_player_2
 
 def evaluate(agent, env, opponent, max_episodes=100, max_timesteps=1000, render = False, agent_is_player_1 = True):
     

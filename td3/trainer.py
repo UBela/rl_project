@@ -5,8 +5,8 @@ sys.path.insert(1, '..')
 import torch
 import numpy as np
 import pickle
-from utils import *
-from evaluate import evaluate
+from td3.utils import *
+from td3.evaluate import evaluate
 #from pink import PinkActionNoise
 
 class TD3Trainer:

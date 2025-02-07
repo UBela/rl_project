@@ -3,12 +3,12 @@ sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 
 
-from td3_agent import TD3Agent
-from trainer import TD3Trainer
+from td3.td3_agent import TD3Agent
+from td3.trainer import TD3Trainer
 import torch
 from hockey import hockey_env as h_env
 import optparse
-from utils import RandomAgent
+from td3.utils import RandomAgent
 import sys
 
 

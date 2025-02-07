@@ -1,12 +1,11 @@
 import torch
 import numpy as np
-from networks import Critic_Net, Actor_Net
-from replay_buffer import ReplayBuffer
+from td3.networks import Critic_Net, Actor_Net
+from td3.replay_buffer import ReplayBuffer
 import torch.nn.functional as F
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.set_num_threads(1)
-
+print("Device: ", device)
 class TD3Agent(object):
     def __init__(self, observation_space, action_space, **userconfig):
         
