@@ -3,6 +3,7 @@ sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 
 import torch
+import time
 import numpy as np
 import pickle
 from td3.utils import *
@@ -128,8 +129,11 @@ class TD3Trainer:
                         wins_per_episode[i_episode] = 1 if winner == -1 else 0
                         loses_per_episode[i_episode] = 1 if winner == 1 else 0
                     break
-            
+            start_time = time.time()
             losses.extend(agent.train(iter_fit=iter_fit))
+            end_time = time.time()
+            print(f"Training time: {end_time - start_time} seconds")
+            
             rewards.append(total_reward)
             lengths.append(t)
             
@@ -144,7 +148,7 @@ class TD3Trainer:
                 print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, avg_reward))
                 # Winrate and Lossrate
                 print(f"Winrate: {sum(wins_per_episode.values())/i_episode:.3f} Lossrate: {sum(loses_per_episode.values())/i_episode:.3f}")
-                
+                print("replay buffer size: ", len(agent.replay_buffer))
             if i_episode % evaluate_every == 0:
                 agent.set_to_eval()
                 print("########## Evaluating agent...########## ")
