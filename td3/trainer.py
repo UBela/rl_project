@@ -100,7 +100,7 @@ class TD3Trainer:
                     actions = np.hstack([a1, a2])
                 
                 (ob_new, reward, done, trunc, _info) = env.step(actions)
-                if render: env.render()
+                #if render: env.render()
                 
                 reward = reward_player_2(env) if not agent_is_player_1 else reward
 
