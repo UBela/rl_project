@@ -9,7 +9,8 @@ __pycache__/
 *.png
 *.pkl
 *.pth
-
+*.out
+*.err
 # Distribution / packaging
 .Python
 build/

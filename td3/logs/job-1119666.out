@@ -1,1 +1,363 @@
 -------- PYTHON OUTPUT ----------
+Device:  cuda
+Episode 20 	 avg length: 178 	 reward: -7.844657521984464
+Winrate: 0.050 Lossrate: 0.400
+Episode 40 	 avg length: 211 	 reward: -10.118793250850567
+Winrate: 0.050 Lossrate: 0.325
+Episode 60 	 avg length: 203 	 reward: -9.009208314675192
+Winrate: 0.083 Lossrate: 0.267
+Episode 80 	 avg length: 208 	 reward: -8.766032638931708
+Winrate: 0.062 Lossrate: 0.275
+Episode 100 	 avg length: 194 	 reward: -4.585215076993858
+Winrate: 0.070 Lossrate: 0.260
+Episode 120 	 avg length: 213 	 reward: -11.445382204921769
+Winrate: 0.058 Lossrate: 0.250
+Episode 140 	 avg length: 235 	 reward: -7.458307964512348
+Winrate: 0.050 Lossrate: 0.243
+Episode 160 	 avg length: 191 	 reward: -6.771285583894962
+Winrate: 0.056 Lossrate: 0.256
+Episode 180 	 avg length: 191 	 reward: -6.056816854733114
+Winrate: 0.056 Lossrate: 0.261
+Episode 200 	 avg length: 196 	 reward: -6.470747219386503
+Winrate: 0.065 Lossrate: 0.260
+Episode 220 	 avg length: 221 	 reward: -3.3414036244767025
+Winrate: 0.073 Lossrate: 0.245
+Episode 240 	 avg length: 206 	 reward: -5.649194478587526
+Winrate: 0.075 Lossrate: 0.246
+Episode 260 	 avg length: 220 	 reward: -6.264394312692371
+Winrate: 0.077 Lossrate: 0.235
+Episode 280 	 avg length: 218 	 reward: -9.581754298968198
+Winrate: 0.071 Lossrate: 0.232
+Episode 300 	 avg length: 191 	 reward: -6.631567065327606
+Winrate: 0.070 Lossrate: 0.237
+Episode 320 	 avg length: 165 	 reward: -6.887497605113168
+Winrate: 0.072 Lossrate: 0.247
+Episode 340 	 avg length: 175 	 reward: -8.88127429293751
+Winrate: 0.068 Lossrate: 0.262
+Episode 360 	 avg length: 207 	 reward: -6.167898695310427
+Winrate: 0.067 Lossrate: 0.264
+Episode 380 	 avg length: 222 	 reward: -4.811681443990274
+Winrate: 0.066 Lossrate: 0.258
+Episode 400 	 avg length: 207 	 reward: -2.3816127236978826
+Winrate: 0.068 Lossrate: 0.255
+Episode 420 	 avg length: 209 	 reward: -9.139066366296934
+Winrate: 0.064 Lossrate: 0.257
+Episode 440 	 avg length: 190 	 reward: -7.137277621281368
+Winrate: 0.068 Lossrate: 0.261
+Episode 460 	 avg length: 130 	 reward: -8.251970745254052
+Winrate: 0.072 Lossrate: 0.276
+Episode 480 	 avg length: 208 	 reward: -6.158518199829322
+Winrate: 0.071 Lossrate: 0.275
+########## Saving a checkpoint... ##########
+Episode 500 	 avg length: 191 	 reward: -6.854487254636889
+Winrate: 0.072 Lossrate: 0.278
+Episode 520 	 avg length: 227 	 reward: -1.9438581747906252
+Winrate: 0.071 Lossrate: 0.269
+Episode 540 	 avg length: 176 	 reward: -8.206223371172229
+Winrate: 0.072 Lossrate: 0.276
+Episode 560 	 avg length: 186 	 reward: -6.815235071681322
+Winrate: 0.073 Lossrate: 0.279
+Episode 580 	 avg length: 207 	 reward: -6.131446001567018
+Winrate: 0.072 Lossrate: 0.281
+Episode 600 	 avg length: 161 	 reward: -7.647279723377599
+Winrate: 0.073 Lossrate: 0.288
+Episode 620 	 avg length: 199 	 reward: -5.234331443547163
+Winrate: 0.073 Lossrate: 0.289
+Episode 640 	 avg length: 211 	 reward: -1.514948167202748
+Winrate: 0.077 Lossrate: 0.281
+Episode 660 	 avg length: 184 	 reward: -5.306586961610389
+Winrate: 0.079 Lossrate: 0.280
+Episode 680 	 avg length: 200 	 reward: -5.353054617437813
+Winrate: 0.079 Lossrate: 0.279
+Episode 700 	 avg length: 181 	 reward: -7.486692787453114
+Winrate: 0.083 Lossrate: 0.277
+Episode 720 	 avg length: 204 	 reward: -7.040417203572892
+Winrate: 0.082 Lossrate: 0.279
+Episode 740 	 avg length: 201 	 reward: -4.746364683648444
+Winrate: 0.082 Lossrate: 0.278
+Episode 760 	 avg length: 177 	 reward: -6.010292878594629
+Winrate: 0.082 Lossrate: 0.282
+Episode 780 	 avg length: 186 	 reward: -7.31620539110465
+Winrate: 0.079 Lossrate: 0.285
+Episode 800 	 avg length: 196 	 reward: -4.2253501137818015
+Winrate: 0.081 Lossrate: 0.284
+Episode 820 	 avg length: 222 	 reward: -4.560715289450332
+Winrate: 0.080 Lossrate: 0.280
+Episode 840 	 avg length: 204 	 reward: -4.862325323307296
+Winrate: 0.081 Lossrate: 0.279
+Episode 860 	 avg length: 188 	 reward: -6.157495163304313
+Winrate: 0.083 Lossrate: 0.277
+Episode 880 	 avg length: 206 	 reward: -4.782302501150634
+Winrate: 0.081 Lossrate: 0.276
+Episode 900 	 avg length: 184 	 reward: -7.372416851736756
+Winrate: 0.082 Lossrate: 0.276
+Episode 920 	 avg length: 185 	 reward: -2.3745367697560016
+Winrate: 0.083 Lossrate: 0.275
+Episode 940 	 avg length: 167 	 reward: -6.73467129514672
+Winrate: 0.084 Lossrate: 0.278
+Episode 960 	 avg length: 189 	 reward: -3.856319743990775
+Winrate: 0.086 Lossrate: 0.276
+Episode 980 	 avg length: 204 	 reward: -5.21225664682379
+Winrate: 0.086 Lossrate: 0.277
+########## Saving a checkpoint... ##########
+Episode 1000 	 avg length: 203 	 reward: -5.848244997827398
+Winrate: 0.086 Lossrate: 0.275
+Episode 1020 	 avg length: 186 	 reward: -3.9300070098053013
+Winrate: 0.086 Lossrate: 0.275
+Episode 1040 	 avg length: 170 	 reward: -1.317971096272829
+Winrate: 0.088 Lossrate: 0.273
+Episode 1060 	 avg length: 192 	 reward: -4.518301585099673
+Winrate: 0.089 Lossrate: 0.274
+Episode 1080 	 avg length: 169 	 reward: -5.203937083953055
+Winrate: 0.091 Lossrate: 0.276
+Episode 1100 	 avg length: 241 	 reward: -2.1920561955463436
+Winrate: 0.089 Lossrate: 0.273
+Episode 1120 	 avg length: 152 	 reward: -7.678332904259736
+Winrate: 0.089 Lossrate: 0.278
+Episode 1140 	 avg length: 179 	 reward: -7.916049904313482
+Winrate: 0.089 Lossrate: 0.281
+Episode 1160 	 avg length: 200 	 reward: -1.159569331466653
+Winrate: 0.091 Lossrate: 0.278
+Episode 1180 	 avg length: 224 	 reward: -5.6972661656511425
+Winrate: 0.089 Lossrate: 0.276
+Episode 1200 	 avg length: 188 	 reward: -0.33510432813395286
+Winrate: 0.093 Lossrate: 0.274
+Episode 1220 	 avg length: 219 	 reward: -8.282289397329148
+Winrate: 0.094 Lossrate: 0.271
+Episode 1240 	 avg length: 217 	 reward: -4.473330494978848
+Winrate: 0.093 Lossrate: 0.271
+Episode 1260 	 avg length: 189 	 reward: -4.907046640305847
+Winrate: 0.093 Lossrate: 0.271
+Episode 1280 	 avg length: 193 	 reward: -5.795140966070223
+Winrate: 0.094 Lossrate: 0.271
+Episode 1300 	 avg length: 208 	 reward: -2.4461621767214665
+Winrate: 0.096 Lossrate: 0.268
+Episode 1320 	 avg length: 206 	 reward: -7.094316962781001
+Winrate: 0.096 Lossrate: 0.268
+Episode 1340 	 avg length: 190 	 reward: -6.318277557320615
+Winrate: 0.098 Lossrate: 0.269
+Episode 1360 	 avg length: 194 	 reward: -4.835672802347921
+Winrate: 0.097 Lossrate: 0.269
+Episode 1380 	 avg length: 212 	 reward: -6.807816848389711
+Winrate: 0.097 Lossrate: 0.267
+Episode 1400 	 avg length: 181 	 reward: -6.596611519832213
+Winrate: 0.099 Lossrate: 0.267
+Episode 1420 	 avg length: 211 	 reward: -5.214820688623899
+Winrate: 0.099 Lossrate: 0.266
+Episode 1440 	 avg length: 203 	 reward: -5.804884686301263
+Winrate: 0.098 Lossrate: 0.265
+Episode 1460 	 avg length: 184 	 reward: -3.9435175048131583
+Winrate: 0.099 Lossrate: 0.265
+Episode 1480 	 avg length: 201 	 reward: -2.5201510080495133
+Winrate: 0.100 Lossrate: 0.264
+########## Saving a checkpoint... ##########
+Episode 1500 	 avg length: 185 	 reward: -6.099996300462228
+Winrate: 0.101 Lossrate: 0.264
+Episode 1520 	 avg length: 218 	 reward: -3.7676554726896256
+Winrate: 0.101 Lossrate: 0.262
+Episode 1540 	 avg length: 186 	 reward: -3.1053920677554103
+Winrate: 0.101 Lossrate: 0.262
+Episode 1560 	 avg length: 207 	 reward: -4.596173925224304
+Winrate: 0.102 Lossrate: 0.261
+Episode 1580 	 avg length: 212 	 reward: -1.0432819843816907
+Winrate: 0.103 Lossrate: 0.258
+Episode 1600 	 avg length: 196 	 reward: -5.531192624854285
+Winrate: 0.103 Lossrate: 0.259
+Episode 1620 	 avg length: 188 	 reward: -4.830068994678726
+Winrate: 0.103 Lossrate: 0.259
+Episode 1640 	 avg length: 190 	 reward: -5.784818873397901
+Winrate: 0.104 Lossrate: 0.260
+Episode 1660 	 avg length: 197 	 reward: -4.5167603747586496
+Winrate: 0.104 Lossrate: 0.260
+Episode 1680 	 avg length: 188 	 reward: -3.1553762485247896
+Winrate: 0.105 Lossrate: 0.259
+Episode 1700 	 avg length: 198 	 reward: -3.778952662442363
+Winrate: 0.104 Lossrate: 0.259
+Episode 1720 	 avg length: 220 	 reward: -2.606752646930751
+Winrate: 0.103 Lossrate: 0.258
+Episode 1740 	 avg length: 183 	 reward: -2.5671458944684087
+Winrate: 0.103 Lossrate: 0.258
+Episode 1760 	 avg length: 193 	 reward: -2.0563347845224094
+Winrate: 0.105 Lossrate: 0.257
+Episode 1780 	 avg length: 203 	 reward: -1.348306929016953
+Winrate: 0.105 Lossrate: 0.256
+Episode 1800 	 avg length: 188 	 reward: -3.9933926161770588
+Winrate: 0.106 Lossrate: 0.256
+Episode 1820 	 avg length: 174 	 reward: -7.9676363341354115
+Winrate: 0.105 Lossrate: 0.257
+Episode 1840 	 avg length: 172 	 reward: -6.433997083951837
+Winrate: 0.105 Lossrate: 0.259
+Episode 1860 	 avg length: 165 	 reward: -4.789027274908267
+Winrate: 0.105 Lossrate: 0.260
+Episode 1880 	 avg length: 196 	 reward: -3.981991647153572
+Winrate: 0.105 Lossrate: 0.260
+Episode 1900 	 avg length: 190 	 reward: -6.4546495387729195
+Winrate: 0.105 Lossrate: 0.259
+Episode 1920 	 avg length: 214 	 reward: -4.8957720197799
+Winrate: 0.105 Lossrate: 0.259
+Episode 1940 	 avg length: 218 	 reward: -5.419279250125966
+Winrate: 0.104 Lossrate: 0.258
+Episode 1960 	 avg length: 181 	 reward: -6.207580766135921
+Winrate: 0.104 Lossrate: 0.259
+Episode 1980 	 avg length: 201 	 reward: -5.662963662725231
+Winrate: 0.105 Lossrate: 0.259
+########## Saving a checkpoint... ##########
+Episode 2000 	 avg length: 158 	 reward: -6.039786724497551
+Winrate: 0.105 Lossrate: 0.261
+########## Evaluating agent...########## 
+Against weak opponent...
+Winrate: 0.02 Lossrate: 0.05
+Against strong opponent...
+Winrate: 0.000 Lossrate: 0.000
+Episode 2020 	 avg length: 175 	 reward: -8.092425893193838
+Winrate: 0.105 Lossrate: 0.262
+Episode 2040 	 avg length: 211 	 reward: -5.157447953048231
+Winrate: 0.104 Lossrate: 0.261
+Episode 2060 	 avg length: 182 	 reward: -4.071445509771285
+Winrate: 0.104 Lossrate: 0.262
+Episode 2080 	 avg length: 210 	 reward: -6.202232413588382
+Winrate: 0.104 Lossrate: 0.261
+Episode 2100 	 avg length: 216 	 reward: -4.409885033178784
+Winrate: 0.104 Lossrate: 0.260
+Episode 2120 	 avg length: 221 	 reward: -6.848538287806673
+Winrate: 0.103 Lossrate: 0.261
+Episode 2140 	 avg length: 187 	 reward: -2.5881114719314446
+Winrate: 0.103 Lossrate: 0.261
+Episode 2160 	 avg length: 172 	 reward: -4.691891015721174
+Winrate: 0.103 Lossrate: 0.262
+Episode 2180 	 avg length: 208 	 reward: -2.407130277032896
+Winrate: 0.104 Lossrate: 0.261
+Episode 2200 	 avg length: 194 	 reward: -2.1190986579107896
+Winrate: 0.105 Lossrate: 0.260
+Episode 2220 	 avg length: 186 	 reward: -3.730359006200755
+Winrate: 0.105 Lossrate: 0.260
+Episode 2240 	 avg length: 211 	 reward: -3.2989176647886707
+Winrate: 0.105 Lossrate: 0.259
+Episode 2260 	 avg length: 206 	 reward: -3.9931184159922126
+Winrate: 0.105 Lossrate: 0.258
+Episode 2280 	 avg length: 208 	 reward: -4.539887888172961
+Winrate: 0.105 Lossrate: 0.258
+Episode 2300 	 avg length: 190 	 reward: -4.38378692220193
+Winrate: 0.105 Lossrate: 0.259
+Episode 2320 	 avg length: 210 	 reward: -2.9627458315158943
+Winrate: 0.106 Lossrate: 0.258
+Episode 2340 	 avg length: 168 	 reward: -5.782510619650468
+Winrate: 0.106 Lossrate: 0.259
+Episode 2360 	 avg length: 223 	 reward: -3.960960715570259
+Winrate: 0.105 Lossrate: 0.258
+Episode 2380 	 avg length: 196 	 reward: -6.470831727533186
+Winrate: 0.104 Lossrate: 0.260
+Episode 2400 	 avg length: 212 	 reward: -1.5651091606375327
+Winrate: 0.105 Lossrate: 0.258
+Episode 2420 	 avg length: 182 	 reward: -6.600071491984826
+Winrate: 0.105 Lossrate: 0.259
+Episode 2440 	 avg length: 166 	 reward: -0.9590919283492136
+Winrate: 0.106 Lossrate: 0.258
+Episode 2460 	 avg length: 190 	 reward: -7.785455338376846
+Winrate: 0.105 Lossrate: 0.260
+Episode 2480 	 avg length: 192 	 reward: -4.028731874927368
+Winrate: 0.105 Lossrate: 0.260
+########## Saving a checkpoint... ##########
+Episode 2500 	 avg length: 186 	 reward: -1.8568948313204927
+Winrate: 0.105 Lossrate: 0.259
+Episode 2520 	 avg length: 215 	 reward: -2.7431233870436613
+Winrate: 0.105 Lossrate: 0.258
+Episode 2540 	 avg length: 177 	 reward: -4.526937113569249
+Winrate: 0.106 Lossrate: 0.259
+Episode 2560 	 avg length: 193 	 reward: -4.961691698227294
+Winrate: 0.106 Lossrate: 0.259
+Episode 2580 	 avg length: 219 	 reward: -5.156596521124416
+Winrate: 0.105 Lossrate: 0.259
+Episode 2600 	 avg length: 196 	 reward: -3.6649446496279325
+Winrate: 0.106 Lossrate: 0.258
+Episode 2620 	 avg length: 194 	 reward: -5.00511338892826
+Winrate: 0.106 Lossrate: 0.258
+Episode 2640 	 avg length: 193 	 reward: -3.2746138678265324
+Winrate: 0.106 Lossrate: 0.258
+Episode 2660 	 avg length: 171 	 reward: -3.6244609704098094
+Winrate: 0.106 Lossrate: 0.258
+Episode 2680 	 avg length: 195 	 reward: -0.5833450332544592
+Winrate: 0.107 Lossrate: 0.257
+Episode 2700 	 avg length: 158 	 reward: -2.5836313221437726
+Winrate: 0.108 Lossrate: 0.257
+Episode 2720 	 avg length: 180 	 reward: -6.819784719008288
+Winrate: 0.108 Lossrate: 0.258
+Episode 2740 	 avg length: 191 	 reward: -3.1459265212157965
+Winrate: 0.108 Lossrate: 0.258
+Episode 2760 	 avg length: 181 	 reward: -3.9086804281153698
+Winrate: 0.107 Lossrate: 0.258
+Episode 2780 	 avg length: 187 	 reward: -9.135503993842983
+Winrate: 0.106 Lossrate: 0.260
+Episode 2800 	 avg length: 206 	 reward: -6.8487351146644055
+Winrate: 0.106 Lossrate: 0.260
+Episode 2820 	 avg length: 188 	 reward: -4.097240708642225
+Winrate: 0.106 Lossrate: 0.260
+Episode 2840 	 avg length: 206 	 reward: -3.7165036592508445
+Winrate: 0.106 Lossrate: 0.259
+Episode 2860 	 avg length: 192 	 reward: -3.4937697944926227
+Winrate: 0.107 Lossrate: 0.259
+Episode 2880 	 avg length: 196 	 reward: -6.253525606147761
+Winrate: 0.106 Lossrate: 0.259
+Episode 2900 	 avg length: 177 	 reward: -6.185541181241248
+Winrate: 0.106 Lossrate: 0.260
+Episode 2920 	 avg length: 197 	 reward: -2.1067214829770338
+Winrate: 0.107 Lossrate: 0.259
+Episode 2940 	 avg length: 154 	 reward: -4.0343426175670265
+Winrate: 0.107 Lossrate: 0.260
+Episode 2960 	 avg length: 211 	 reward: -0.43774803523453576
+Winrate: 0.107 Lossrate: 0.259
+Episode 2980 	 avg length: 173 	 reward: -0.7203036059663972
+Winrate: 0.109 Lossrate: 0.258
+########## Saving a checkpoint... ##########
+Episode 3000 	 avg length: 198 	 reward: -1.6100234453780515
+Winrate: 0.109 Lossrate: 0.258
+Episode 3020 	 avg length: 195 	 reward: -1.641472406518099
+Winrate: 0.109 Lossrate: 0.258
+Episode 3040 	 avg length: 182 	 reward: -3.025339800963234
+Winrate: 0.109 Lossrate: 0.258
+Episode 3060 	 avg length: 207 	 reward: -3.4938968048349173
+Winrate: 0.109 Lossrate: 0.258
+Episode 3080 	 avg length: 165 	 reward: -1.476255521843421
+Winrate: 0.110 Lossrate: 0.258
+Episode 3100 	 avg length: 209 	 reward: -1.9427378709613463
+Winrate: 0.111 Lossrate: 0.257
+Episode 3120 	 avg length: 182 	 reward: -5.178526310654725
+Winrate: 0.111 Lossrate: 0.258
+Episode 3140 	 avg length: 168 	 reward: -4.355980569861534
+Winrate: 0.111 Lossrate: 0.259
+Episode 3160 	 avg length: 148 	 reward: -2.4599919651183453
+Winrate: 0.112 Lossrate: 0.259
+Episode 3180 	 avg length: 196 	 reward: -2.9117119888620855
+Winrate: 0.113 Lossrate: 0.258
+Episode 3200 	 avg length: 190 	 reward: -4.6911490405654
+Winrate: 0.113 Lossrate: 0.259
+Episode 3220 	 avg length: 192 	 reward: -3.101407688718349
+Winrate: 0.113 Lossrate: 0.259
+Episode 3240 	 avg length: 184 	 reward: -3.0037983470253815
+Winrate: 0.113 Lossrate: 0.259
+Episode 3260 	 avg length: 151 	 reward: -5.355345834564682
+Winrate: 0.114 Lossrate: 0.259
+Episode 3280 	 avg length: 183 	 reward: -5.3146004058438185
+Winrate: 0.114 Lossrate: 0.260
+Episode 3300 	 avg length: 170 	 reward: -0.07341069722978669
+Winrate: 0.115 Lossrate: 0.259
+Episode 3320 	 avg length: 192 	 reward: -4.188753029548966
+Winrate: 0.115 Lossrate: 0.259
+Episode 3340 	 avg length: 206 	 reward: -5.7868584788003
+Winrate: 0.115 Lossrate: 0.260
+Episode 3360 	 avg length: 176 	 reward: -4.719504748833904
+Winrate: 0.116 Lossrate: 0.260
+Episode 3380 	 avg length: 202 	 reward: -5.1744394034265095
+Winrate: 0.116 Lossrate: 0.260
+Episode 3400 	 avg length: 161 	 reward: -7.1057228539815736
+Winrate: 0.116 Lossrate: 0.261
+Episode 3420 	 avg length: 230 	 reward: -4.0726011133491635
+Winrate: 0.115 Lossrate: 0.261
+Episode 3440 	 avg length: 208 	 reward: -4.66700834900248
+Winrate: 0.115 Lossrate: 0.261
+Episode 3460 	 avg length: 199 	 reward: -3.476135555629047
+Winrate: 0.116 Lossrate: 0.260
+Episode 3480 	 avg length: 181 	 reward: -1.925972594060239
+Winrate: 0.116 Lossrate: 0.260
+########## Saving a checkpoint... ##########
+Episode 3500 	 avg length: 201 	 reward: -2.131766944133792
