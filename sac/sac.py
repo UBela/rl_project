@@ -4,7 +4,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.distributions import Normal
-import copy
 
 # ----------------- 🎯 Replay Buffer -----------------
 class ReplayBuffer:
@@ -25,9 +24,9 @@ class ReplayBuffer:
         return (
             np.array(state),
             np.array(action),
-            np.array(reward),
+            np.array(reward).reshape(-1, 1),
             np.array(next_state),
-            np.array(done),
+            np.array(done).reshape(-1, 1),
         )
 
     def __len__(self):
@@ -102,51 +101,69 @@ class SACAgent:
         policy_lr=3e-4,
         q_lr=3e-4,
         value_lr=3e-4,
+        auto_alpha=True,
         device="cpu",
     ):
         self.gamma = gamma
         self.tau = tau
-        self.alpha = alpha
         self.device = torch.device(device)
+        self.action_dim = action_dim
 
+        # Netzwerke
         self.value_net = ValueNetwork(state_dim, hidden_dim).to(self.device)
         self.target_value_net = ValueNetwork(state_dim, hidden_dim).to(self.device)
         self.soft_q_net1 = SoftQNetwork(state_dim, action_dim, hidden_dim).to(self.device)
         self.soft_q_net2 = SoftQNetwork(state_dim, action_dim, hidden_dim).to(self.device)
         self.policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim).to(self.device)
 
+        # Optimizer
         self.value_optimizer = optim.Adam(self.value_net.parameters(), lr=value_lr)
         self.soft_q_optimizer1 = optim.Adam(self.soft_q_net1.parameters(), lr=q_lr)
         self.soft_q_optimizer2 = optim.Adam(self.soft_q_net2.parameters(), lr=q_lr)
         self.policy_optimizer = optim.Adam(self.policy_net.parameters(), lr=policy_lr)
 
-        # Kopiere die Netzwerkgewichte auf das Target-Netzwerk
-        for target_param, param in zip(
-            self.target_value_net.parameters(), self.value_net.parameters()
-        ):
-            target_param.data.copy_(param.data)
+        # Temperaturparameter (Alpha)
+        self.auto_alpha = auto_alpha
+        if auto_alpha:
+            self.target_entropy = -action_dim
+            self.log_alpha = torch.tensor(np.log(alpha), requires_grad=True, device=self.device)
+            self.alpha_optimizer = optim.Adam([self.log_alpha], lr=policy_lr)
+        else:
+            self.alpha = alpha
+
+        # Ziel-Netzwerk initialisieren
+        self.update_target_network(soft_update=False)
+
+    def update_target_network(self, soft_update=True):
+        """ Aktualisiert das Target Value-Netzwerk mit Soft Updates oder komplettem Kopieren """
+        tau = self.tau if soft_update else 1.0
+        for target_param, param in zip(self.target_value_net.parameters(), self.value_net.parameters()):
+            target_param.data.copy_(target_param.data * (1 - tau) + param.data * tau)
 
     def select_action(self, state, eval=False):
+        """ Wählt eine Aktion basierend auf der aktuellen Policy """
         state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
         with torch.no_grad():
-            action, _ = self.policy_net.sample(state)  # Policy wählt eine Aktion
+            action, _ = self.policy_net.sample(state)
         return action.cpu().numpy().flatten()
 
     def update(self, replay_buffer, batch_size):
+        """ Aktualisiert das SAC-Modell basierend auf einer Minibatch """
         state, action, reward, next_state, done = replay_buffer.sample(batch_size)
         state = torch.FloatTensor(state).to(self.device)
         next_state = torch.FloatTensor(next_state).to(self.device)
         action = torch.FloatTensor(action).to(self.device)
-        reward = torch.FloatTensor(reward).unsqueeze(1).to(self.device)
-        done = torch.FloatTensor(done).unsqueeze(1).to(self.device)
+        reward = torch.FloatTensor(reward).to(self.device)
+        done = torch.FloatTensor(done).to(self.device)
 
-        # Berechnung des Q-Wertes
+        # Q-Werte berechnen
         target_value = self.target_value_net(next_state)
-        next_q_value = reward + (1 - done) * self.gamma * target_value
-        q1_loss = F.mse_loss(self.soft_q_net1(state, action), next_q_value.detach())
-        q2_loss = F.mse_loss(self.soft_q_net2(state, action), next_q_value.detach())
+        target_q_value = reward + (1 - done) * self.gamma * target_value
+        target_q_value = target_q_value.detach()
 
-        # Update der Q-Netzwerke
+        q1_loss = F.mse_loss(self.soft_q_net1(state, action), target_q_value)
+        q2_loss = F.mse_loss(self.soft_q_net2(state, action), target_q_value)
+
         self.soft_q_optimizer1.zero_grad()
         q1_loss.backward()
         self.soft_q_optimizer1.step()
@@ -155,15 +172,11 @@ class SACAgent:
         q2_loss.backward()
         self.soft_q_optimizer2.step()
 
-        # Berechnung der Policy-Verlustfunktion
+        # Policy Loss berechnen
         new_action, log_prob = self.policy_net.sample(state)
-        q_value = torch.min(
-            self.soft_q_net1(state, new_action),
-            self.soft_q_net2(state, new_action),
-        )
+        q_value = torch.min(self.soft_q_net1(state, new_action), self.soft_q_net2(state, new_action))
         policy_loss = (log_prob * self.alpha - q_value).mean()
 
-        # Update des Policy-Netzwerks
         self.policy_optimizer.zero_grad()
         policy_loss.backward()
         self.policy_optimizer.step()
@@ -175,16 +188,19 @@ class SACAgent:
             (q_value - log_prob * self.alpha).detach(),
         )
 
-        # Update des Value-Netzwerks
         self.value_optimizer.zero_grad()
         value_loss.backward()
         self.value_optimizer.step()
 
-        # Update des Target-Value-Netzwerks
-        for target_param, param in zip(
-            self.target_value_net.parameters(), self.value_net.parameters()
-        ):
-            target_param.data.copy_(
-                target_param.data * (1 - self.tau) + param.data * self.tau
-            )
+        # Soft Updates für das Target-Value-Netzwerk
+        self.update_target_network()
 
+        # Automatische Anpassung des Entropie-Koeffizienten (Alpha)
+        if self.auto_alpha:
+            alpha_loss = -(self.log_alpha * (log_prob + self.target_entropy).detach()).mean()
+
+            self.alpha_optimizer.zero_grad()
+            alpha_loss.backward()
+            self.alpha_optimizer.step()
+
+            self.alpha = self.log_alpha.exp()
