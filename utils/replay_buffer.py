@@ -45,7 +45,7 @@ class ReplayBuffer:
     
 class PriorityReplayBuffer:
     
-    def __init__(self, max_size, alpha=0.4, beta=0.4, eps=1e-5, update_per_beta=3e-5):
+    def __init__(self, max_size, alpha=0.4, beta=0.4, eps=1e-5):
         self.transitions = np.array([])
         self.size = 0
         self.current_idx = 0  
@@ -55,12 +55,7 @@ class PriorityReplayBuffer:
         self.tree = SumTree(max_size)
         self.eps = eps
         self.max_priority = 1.0
-        self.update_per_beta = update_per_beta
         
-    def _get_priority(self, error):
-        if isinstance(error, torch.Tensor):
-            error = error.detach().cpu().numpy()
-        return (error + self.eps) ** self.alpha
     
     def add_transition(self, new_transitions):
         """
@@ -80,35 +75,49 @@ class PriorityReplayBuffer:
         
         if batch_size > self.size:
             batch_size = self.size
-
-        # Update beta every time a batch is sampled
-        self.beta = min(1.0, self.beta + self.update_per_beta)
         segment = self.tree.total() / batch_size
-        sample_idxs = []
+       
         tree_idxs = []
-        priorities = np.array([])
+        sample_idxs = []
+        priorities = np.zeros(batch_size, dtype=np.float32)
+        # get minimum probabilty, ie. the smallest leaf in the sum tree and maximum weight
+        p_min = self.tree.tree[-self.tree.capacity:].min() / self.tree.total()
+        max_weight = (self.size * p_min) ** (-self.beta)
         
         for i in range(batch_size):
             a = segment * i
             b = segment * (i + 1)
             
             rand_v = np.random.uniform(a, b)
-            leaf_idx, priority, data_idx = self.tree.get_leaf(rand_v)
+           
+            leaf_idx, priority, sample_idx = self.tree.get_leaf(rand_v)
             priorities[i] = priority
             tree_idxs.append(leaf_idx)
-            sample_idxs.append(data_idx)
+            sample_idxs.append(sample_idx)
+           
         
         probs = priorities / self.tree.total()
         
-        weights = (self.size * probs) ** (-self.beta)
-        weights = weights / weights.max()
+        weights = (self.size * (probs + self.eps)) ** (-self.beta)
+        weights = weights / (max_weight + self.eps)
+
     
-        
+        #store experiences in a numpy array so that each row is one transition
+    
         return self.transitions[sample_idxs, :], tree_idxs, weights
         
     def update_priorities(self, tree_idxs, errors):
-        for i, idx in enumerate(tree_idxs):
-            priority = self._get_priority(errors[i])
-            self.tree.update(idx, priority)
-            self.max_priority = max(self.max_priority, priority)
-        
+        errors = errors + self.eps
+        #errors = np.minimum(errors, self.max_priority)
+        priorities = errors ** self.alpha
+        #assert(priorities > 0.).all()
+        for idx, p in zip(tree_idxs, priorities):
+           
+            self.tree.update(idx, p)
+            self.max_priority = max(self.max_priority, p)
+    
+    def __len__(self):
+        return self.size
+    
+    def update_beta(self, update_per_beta):
+        self.beta = min(1.0, self.beta + update_per_beta)

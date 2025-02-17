@@ -9,7 +9,7 @@
 #SBATCH --mem=50G                  # Total memory pool for all cores (see also --mem-per-cpu); exceeding this number will cause your job to fail.
 #SBATCH --output=logs/job-%j.out       # File to which STDOUT will be written - make sure this is not on $HOME
 #SBATCH --error=logs/myjob-%j.err        # File to which STDERR will be written - make sure this is not on $HOME
-#SBATCH --mail-type=FAIL            # Type of email notification- BEGIN,END,FAIL,ALL
+#SBATCH --mail-type=END            # Type of email notification- BEGIN,END,FAIL,ALL
 #SBATCH --mail-user=bela.umlauf@student.uni-tuebingen.de   # Email to which notifications will be sent
 
 
@@ -31,7 +31,7 @@ cd /mnt/qb/work/ludwig/lqb122/rl_project/td3
 
 # Run your code
 echo "-------- PYTHON OUTPUT ----------"
-python3 train_agent.py --results_folder ./results/both/self_play --use_PER True --max_episodes 30000 --self_play_start 16000
+python3 train_agent.py --results_folder ./results/both/per_alpha_0.6_beta_0.6_beta_update_linear --use_PER --max_episodes 30000 --self_play_start 16000 --actor_lr 0.0003 --critic_lr 0.0003 --per_beta 0.6
 
 
 # Check if Python script ran successfully

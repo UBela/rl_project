@@ -31,9 +31,9 @@ optParser.add_option("--self_play_start", type=int, default=16_000)
 optParser.add_option("--evaluate_every", type=int, default=2000)
 optParser.add_option("--results_folder", type=str, default="/home/stud311/work/rl_project/td3/results")
 optParser.add_option("--use_PER", action="store_true", default=False)
-optParser.add_option("--per_alpha", help="Alpha for PER", type=int, default=0.6)
-optParser.add_option("--per_beta", help="Beta for PER", type=int, default=0.4)
-optParser.add_option("--per_beta_update", help="Beta update for PER", type=int, default=0.00003)
+optParser.add_option("--per_alpha", help="Alpha for PER", type=float, default=0.6)
+optParser.add_option("--per_beta", help="Beta for PER", type=float, default=0.4)
+optParser.add_option("--per_beta_update", help="Beta update for PER", type=float, default=0.00002)
 # agent parameters
 optParser.add_option("--actor_lr", type=float, default=1e-4)
 optParser.add_option("--critic_lr", type=float, default=1e-3)
@@ -62,7 +62,6 @@ if __name__ == '__main__':
     strong_opponent = h_env.BasicOpponent(weak=False) 
     
     opponents = [weak_opponent, strong_opponent]
-    
     agent = TD3Agent(env.observation_space, env.action_space, device=device, userconfig=vars(opts))
     print("### Agent created ###")
     trainer = TD3Trainer(vars(opts))

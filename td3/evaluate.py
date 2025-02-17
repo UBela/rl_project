@@ -17,12 +17,12 @@ def evaluate(agent, env, opponent, max_episodes=100, max_timesteps=1000, render 
         for t in range(max_timesteps):
             
             if agent_is_player_1:
-                a1 = agent.get_action(ob)
+                a1 = agent.act(ob)
                 a2 = opponent.act(obs_agent2)
                 actions = np.hstack([a1, a2])
             else:
                 a1 = opponent.act(obs_agent2)
-                a2 = agent.get_action(ob)
+                a2 = agent.act(ob)
                 actions = np.hstack([a1, a2])
 
             (ob_new, reward, done, trunc, _info) = env.step(actions)

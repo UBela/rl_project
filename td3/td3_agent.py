@@ -1,14 +1,14 @@
 import torch
 import numpy as np
 from td3.networks import Critic_Net, Actor_Net
-from td3.replay_buffer import ReplayBuffer, PriorityReplayBuffer
+from utils.replay_buffer import ReplayBuffer, PriorityReplayBuffer
 import torch.nn.functional as F
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device: ", device)
 
         
 class TD3Agent(object):
-    def __init__(self, observation_space, action_space, device, **userconfig):
+    def __init__(self, observation_space, action_space, device, userconfig):
         
         self._observation_space = observation_space
         self._action_space = action_space
@@ -32,15 +32,15 @@ class TD3Agent(object):
         
         self._config.update(userconfig)    
         self._noise_clamp = self._config["noise_clip"]
-        self._use_prioritized = self._config.get("use_PER")
+        self._use_prioritized = self._config["use_PER"]
         if not self._use_prioritized:
+            print("Use simple Experience Replay")
             self.replay_buffer = ReplayBuffer(max_size=self._config["buffer_size"])
         else: 
+            print("Use Prioritized Experience Replay")
             self.replay_buffer = PriorityReplayBuffer(max_size=self._config["buffer_size"], 
                                                     alpha=self._config["per_alpha"], 
-                                                    beta=self._config["per_beta"],
-                                                    update_per_beta=self._config["per_beta_update"])
-
+                                                    beta=self._config["per_beta"])
         self.critic_net = Critic_Net(
             observation_dim=self._observation_space.shape[0], 
             action_dim=self._action_n, 
@@ -96,8 +96,11 @@ class TD3Agent(object):
         return action
             
     def store_transition(self, transition: tuple):
+        
         self.replay_buffer.add_transition(transition)
     
+    def update_per_beta(self, update_per_beta):
+        self.replay_buffer.update_beta(update_per_beta)
         
     def state(self):
         return self.critic_net.state_dict(), self.actor_net.state_dict()
@@ -118,6 +121,8 @@ class TD3Agent(object):
         self.critic_net.eval()
         self.actor_net_target.eval()
         self.critic_net_target.eval()
+    
+    
         
     def mse(self, pred, target, weight):
         """MSE with importance sampling weights from PER.
@@ -127,7 +132,12 @@ class TD3Agent(object):
             target (_type_): _description_
             weight (_type_): _description_
         """
-        return torch.mean(weight * (pred - target) ** 2)
+        td_error = pred - target
+        
+        weighted_squared_error = weight * td_error * td_error
+        return weighted_squared_error.mean()
+    
+    
     def _sliding_update(self, target: torch.nn.Module, source: torch.nn.Module):
         for target_param, param in zip(target.parameters(), source.parameters()):
             target_param.data.copy_(self._config["tau"] * param.data + (1.0 - self._config["tau"]) * target_param.data)
@@ -175,12 +185,23 @@ class TD3Agent(object):
                 critic_loss = self.mse(q1, td_target, weights) + self.mse(q2, td_target, weights)
             
             td_error = torch.abs(q1 - td_target).detach().cpu().numpy()
+            
+            #check if q1 or td_target is nan
+            if torch.isnan(q1).any() or torch.isnan(td_target).any():
+                print("weights",weights)
+                print("loss",critic_loss)
+                print("q1: ", q1)
+                print("td_target: ", td_target)
+                raise ValueError("NaN detected in TD3 loss computation!")
+                
+             
             if self._use_prioritized:
                 self.replay_buffer.update_priorities(idxs, td_error)
             
             self.critic_net.optimizer.zero_grad()
             critic_loss.backward()
             self.critic_net.optimizer.step()
+           
             
             # Policy update
             if self.train_iter % self._config["policy_update_freq"] == 0:
