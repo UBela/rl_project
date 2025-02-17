@@ -45,7 +45,7 @@ class ReplayBuffer:
     
 class PriorityReplayBuffer:
     
-    def __init__(self, max_size, alpha=0.4, beta=0.4, eps=1e-5):
+    def __init__(self, max_size, alpha=0.4, beta=0.4, eps=0.01):
         self.transitions = np.array([])
         self.size = 0
         self.current_idx = 0  
@@ -80,8 +80,13 @@ class PriorityReplayBuffer:
         tree_idxs = []
         sample_idxs = []
         priorities = np.zeros(batch_size, dtype=np.float32)
-        # get minimum probabilty, ie. the smallest leaf in the sum tree and maximum weight
-        p_min = self.tree.tree[-self.tree.capacity:].min() / self.tree.total()
+        
+        leafs = self.tree.tree[-self.tree.capacity:]
+        # filter out zeroes, in case the tree is not full
+        non_zero_leafs = leafs[leafs != 0]
+       
+        smallest_leaf = non_zero_leafs.min()
+        p_min = smallest_leaf / self.tree.total()
         max_weight = (self.size * p_min) ** (-self.beta)
         
         for i in range(batch_size):
@@ -98,19 +103,18 @@ class PriorityReplayBuffer:
         
         probs = priorities / self.tree.total()
         
-        weights = (self.size * (probs + self.eps)) ** (-self.beta)
-        weights = weights / (max_weight + self.eps)
-
+        #avoid division by zero when the tree is not full
+        if (probs == 0).any():
+            probs = probs + 1e-5
+        weights = (self.size * probs) ** (-self.beta)
     
-        #store experiences in a numpy array so that each row is one transition
-    
+        weights = weights / max_weight
+        
         return self.transitions[sample_idxs, :], tree_idxs, weights
         
     def update_priorities(self, tree_idxs, errors):
         errors = errors + self.eps
-        #errors = np.minimum(errors, self.max_priority)
         priorities = errors ** self.alpha
-        #assert(priorities > 0.).all()
         for idx, p in zip(tree_idxs, priorities):
            
             self.tree.update(idx, p)

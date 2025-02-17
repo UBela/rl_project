@@ -31,7 +31,7 @@ cd /mnt/qb/work/ludwig/lqb122/rl_project/td3
 
 # Run your code
 echo "-------- PYTHON OUTPUT ----------"
-python3 train_agent.py --results_folder ./results/both/per_alpha_0.6_beta_0.6_beta_update_linear --use_PER --max_episodes 30000 --self_play_start 16000 --actor_lr 0.0003 --critic_lr 0.0003 --per_beta 0.6
+python3 train_agent.py --results_folder ./results/both/per_standard --use_PER --max_episodes 30000 --self_play_start 16000 --actor_lr 0.0003 --critic_lr 0.0003 
 
 
 # Check if Python script ran successfully

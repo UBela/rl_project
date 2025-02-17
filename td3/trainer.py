@@ -18,9 +18,16 @@ class TD3Trainer:
         self.config = config
         self.total_gradient_steps = 0
         self.total_steps = 0
-    def _save_statistics(self, rewards, lengths, losses, wins_per_episode, loses_per_episode, train_iter):
+    def _save_statistics(self, rewards, lengths, losses, wins_per_episode, loses_per_episode, train_iter, eval_wins_easy, eval_loses_easy, eval_wins_hard, eval_loses_hard):
+        if not self.config['use_hard_opp']:
+            eval_wins_hard = None
+            eval_loses_hard = None
+            
         with open(f"{self.config['results_folder']}/results_td3_t{train_iter}_stats.pkl", "wb") as f:
-            pickle.dump({"rewards": rewards, "lengths": lengths, "losses": losses, "wins": wins_per_episode, "loses": loses_per_episode}, f)
+            pickle.dump({"rewards": rewards, "lengths": lengths, "losses": losses, 
+                         "wins": wins_per_episode, "loses": loses_per_episode, 
+                         "eval_wins_easy": eval_wins_easy, "eval_loses_hard": eval_loses_easy,
+                         "eval_wins_hard": eval_wins_hard, "eval_loses_hard": eval_loses_hard}, f)
     
     def _select_opponent(self, opponents: list):
         return np.random.choice(opponents)
@@ -36,13 +43,13 @@ class TD3Trainer:
     
     def fill_replay_buffer(self, agent, env):  
         
-        while len(agent.replay_buffer) < 50_000:
+        while len(agent.replay_buffer) < self.config['buffer_size']:
             ob, _ = env.reset()
             obs_agent2 = env.obs_agent_two()
             opponent = self._select_opponent(opponents=[h_env.BasicOpponent(weak=True), h_env.BasicOpponent(weak=False)])
             done = False
             trunc = False
-            while not done or not trunc:
+            while not (done or trunc):
                 a1 = np.random.uniform(-1, 1, 4)
                 a2 = opponent.act(obs_agent2)
                 actions = np.hstack([a1, a2])
@@ -70,6 +77,10 @@ class TD3Trainer:
         wins_per_episode = {}
         loses_per_episode = {}
         losses = []
+        wins_per_episode_eval_easy = {}
+        loses_per_episode_eval_easy = {}
+        wins_per_episode_eval_hard = {}
+        loses_per_episode_eval_hard = {}
         if random_seed is not None:
             np.random.seed(random_seed)
             torch.manual_seed(random_seed)
@@ -78,11 +89,11 @@ class TD3Trainer:
         #pink_noise = PinkActionNoise(sigma=0.3, seq_len=max_timesteps, action_dim=4)
         #print("Pink noise: ", pink_noise.shape)
         
-        #if self.config['use_PER']:
-        #    
-        #    print("Filling replay buffer...")
-        #    self.fill_replay_buffer(agent, env)
-        #    print("Replay buffer filled.")
+        if self.config['use_PER']:
+            
+            print("Filling replay buffer...")
+            self.fill_replay_buffer(agent, env)
+            print("Replay buffer filled.")
            
         
         for i_episode in range(1, max_episodes + 1):
@@ -154,21 +165,20 @@ class TD3Trainer:
                         loses_per_episode[i_episode] = 1 if winner == 1 else 0
                     break
             # fill replay buffer before training
-            if self.total_steps > 50000:
-                losses.extend(agent.train(iter_fit=iter_fit))
-                rewards.append(total_reward)
-                lengths.append(t)
-                print(f"Episode {i_episode} time: {time.time() - start_time_epsiode} seconds")
             
-                self.total_gradient_steps += iter_fit
+            losses.extend(agent.train(iter_fit=iter_fit))
+            rewards.append(total_reward)
+            lengths.append(t)
+            print(f"Episode {i_episode} time: {time.time() - start_time_epsiode} seconds")
+            
+            self.total_gradient_steps += iter_fit
                 
             self._add_self_play_agent(agent, opponents, i_episode)
             if i_episode % 500 == 0:
                 print("########## Saving a checkpoint... ##########")
                 torch.save(agent.state(), f'{self.config['results_folder']}/td3_{i_episode}-t{iter_fit}-s{random_seed}.pth')
-                self._save_statistics(rewards, lengths, losses, wins_per_episode, loses_per_episode, iter_fit)
                 
-            if i_episode % log_interval == 0 and self.total_steps > 50000:
+            if i_episode % log_interval == 0:
                 avg_reward = np.mean(rewards[-log_interval:])
                 avg_length = int(np.mean(lengths[-log_interval:]))
                 print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, avg_reward))
@@ -181,11 +191,19 @@ class TD3Trainer:
                 print("########## Evaluating agent...########## ")
                 print("Against weak opponent...")
                 wins, loses = evaluate(agent, env, opponents[0], max_episodes=100, max_timesteps=1000, render=False, agent_is_player_1=agent_is_player_1)
-                print(f"Winrate: {sum(wins)/100} Lossrate: {sum(loses)/100}")
-                
+                win_rate, lose_rate = sum(wins)/100, sum(loses)/100
+                print(f"Winrate: {win_rate:.3f} Lossrate: {lose_rate:.3f}")
+                wins_per_episode_eval_easy[i_episode] = win_rate
+                loses_per_episode_eval_easy[i_episode] = lose_rate
                 if use_hard_opp:
                     print("Against strong opponent...")
                     wins, loses = evaluate(agent, env, opponents[1], max_episodes=100, max_timesteps=1000, render=False, agent_is_player_1=agent_is_player_1)
-                    print(f"Winrate: {sum(wins)/100:.3f} Lossrate: {sum(loses)/100:.3f}")
-            
+                    win_rate, lose_rate = sum(wins)/100, sum(loses)/100
+                    print(f"Winrate: {win_rate:.3f} Lossrate: {lose_rate:.3f}")
+                    wins_per_episode_eval_hard[i_episode] = win_rate
+                    loses_per_episode_eval_hard[i_episode] = lose_rate
+                self._save_statistics(rewards, lengths, losses, wins_per_episode, loses_per_episode, iter_fit, 
+                                      wins_per_episode_eval_easy, loses_per_episode_eval_easy, 
+                                      wins_per_episode_eval_hard, loses_per_episode_eval_hard)
+
             agent.set_to_train()
