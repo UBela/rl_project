@@ -44,8 +44,46 @@ class ReplayBuffer:
     
     
 class PriorityReplayBuffer:
+    """
+    A prioritized replay buffer that stores and samples transitions based on their priority, implemented using a SumTree.
+
+    The buffer stores transitions and assigns priorities to each transition based on their TD error. 
+    The priority of each transition is used to sample transitions more likely to have high TD errors, thus improving the learning efficiency. 
+
+    The buffer uses a SumTree data structure to efficiently store and retrieve transitions based on their priorities.
+
+    Attributes:
+        max_size (int): The maximum number of transitions the buffer can hold.
+        alpha (float): The exponent used to calculate the priority of a transition (higher values make the priorities more skewed).
+        beta (float): The importance-sampling weight, which adjusts the bias introduced by prioritization.
+        eps (float): A small value added to probabilities to avoid division by zero.
+        transitions (np.ndarray): Array that stores the transitions in the buffer.
+        size (int): The current number of transitions in the buffer.
+        current_idx (int): The index for the next transition to be added to the buffer.
+        tree (SumTree): The SumTree structure used to store priorities and efficiently sample transitions.
+        max_priority (float): The maximum priority in the buffer, used to initialize new transitions with high priority.
+
+    Methods:
+        add_transition(new_transitions):
+            Adds a new transition to the buffer with an initial priority based on the maximum priority.
+
+        sample(batch_size=1):
+            Samples a batch of transitions from the buffer according to their priorities, returning the transitions, tree indices, and importance-sampling weights.
+
+        update_priorities(tree_idxs, errors):
+            Updates the priorities of transitions in the buffer based on the new TD errors, which are used for further prioritization.
+
+        __len__():
+            Returns the current size of the buffer.
+
+        update_beta(update_per_beta):
+            Updates the beta value gradually, which is used for computing importance-sampling weights.
+            
+        This docstring was generated with the help of chatGPT
+    """
+
     
-    def __init__(self, max_size, alpha=0.4, beta=0.4, eps=0.01):
+    def __init__(self, max_size, alpha=0.6, beta=0.4, eps=0.01):
         self.transitions = np.array([])
         self.size = 0
         self.current_idx = 0  
@@ -55,6 +93,7 @@ class PriorityReplayBuffer:
         self.tree = SumTree(max_size)
         self.eps = eps
         self.max_priority = 1.0
+        assert self.max_size > 0 and self.max_size & (self.max_size - 1) == 0, "Max size must be a power of 2"
         
     
     def add_transition(self, new_transitions):
@@ -82,7 +121,7 @@ class PriorityReplayBuffer:
         priorities = np.zeros(batch_size, dtype=np.float32)
         
         leafs = self.tree.tree[-self.tree.capacity:]
-        # filter out zeroes, in case the tree is not full
+        # filter out zeroes, in case the tree is not full, avoided by prefilling replay buffer
         non_zero_leafs = leafs[leafs != 0]
        
         smallest_leaf = non_zero_leafs.min()
@@ -103,7 +142,7 @@ class PriorityReplayBuffer:
         
         probs = priorities / self.tree.total()
         
-        #avoid division by zero when the tree is not full
+        #avoid division by zero when the tree is not full, avoided by prefilling replay buffer
         if (probs == 0).any():
             probs = probs + 1e-5
         weights = (self.size * probs) ** (-self.beta)

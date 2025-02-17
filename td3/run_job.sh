@@ -5,7 +5,7 @@
 #SBATCH --nodes=1                  # Ensure that all cores are on the same machine with nodes=1
 #SBATCH --partition=a100-galvani  # Which partition will run your job
 #SBATCH --time=3-00:00             # Allowed runtime in D-HH:MM
-#SBATCH --gres=gpu:2              # (optional) Requesting type and number of GPUs
+#SBATCH --gres=gpu:1               # (optional) Requesting type and number of GPUs
 #SBATCH --mem=50G                  # Total memory pool for all cores (see also --mem-per-cpu); exceeding this number will cause your job to fail.
 #SBATCH --output=logs/job-%j.out       # File to which STDOUT will be written - make sure this is not on $HOME
 #SBATCH --error=logs/myjob-%j.err        # File to which STDERR will be written - make sure this is not on $HOME

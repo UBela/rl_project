@@ -18,6 +18,7 @@ class TD3Trainer:
         self.config = config
         self.total_gradient_steps = 0
         self.total_steps = 0
+        
     def _save_statistics(self, rewards, lengths, losses, wins_per_episode, loses_per_episode, train_iter, eval_wins_easy, eval_loses_easy, eval_wins_hard, eval_loses_hard):
         if not self.config['use_hard_opp']:
             eval_wins_hard = None
@@ -90,14 +91,11 @@ class TD3Trainer:
         #print("Pink noise: ", pink_noise.shape)
         
         if self.config['use_PER']:
-            
             print("Filling replay buffer...")
             self.fill_replay_buffer(agent, env)
             print("Replay buffer filled.")
            
-        
         for i_episode in range(1, max_episodes + 1):
-            start_time_epsiode = time.time()
             # 50% chance that the agent is player 1
             agent_is_player_1 = np.random.choice([True, False])
             agent_is_player_1 = True
@@ -108,6 +106,7 @@ class TD3Trainer:
             total_reward = 0
             wins_per_episode[i_episode] = 0
             loses_per_episode[i_episode] = 0
+            
             if self.config['use_self_play']:
                 opponent = self._select_opponent(opponents)
             else:
@@ -118,8 +117,6 @@ class TD3Trainer:
                     beta_update = (1.0 - self.config["per_beta"]) / max_episodes
                 else: 
                     beta_update = self.config['per_beta_update']
-                beta_update = (1.0 - self.config["per_beta"]) / max_episodes
-
                 agent.update_per_beta(beta_update)
             
             for t in range(max_timesteps):
@@ -164,12 +161,10 @@ class TD3Trainer:
                         wins_per_episode[i_episode] = 1 if winner == -1 else 0
                         loses_per_episode[i_episode] = 1 if winner == 1 else 0
                     break
-            # fill replay buffer before training
             
             losses.extend(agent.train(iter_fit=iter_fit))
             rewards.append(total_reward)
             lengths.append(t)
-            print(f"Episode {i_episode} time: {time.time() - start_time_epsiode} seconds")
             
             self.total_gradient_steps += iter_fit
                 
@@ -184,7 +179,6 @@ class TD3Trainer:
                 print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, avg_reward))
                 # Winrate and Lossrate
                 print(f"Winrate: {sum(wins_per_episode.values())/i_episode:.3f} Lossrate: {sum(loses_per_episode.values())/i_episode:.3f}")
-                print("replay buffer size: ", len(agent.replay_buffer))
                 
             if i_episode % evaluate_every == 0 or i_episode == max_episodes:
                 agent.set_to_eval()

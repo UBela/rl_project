@@ -33,7 +33,7 @@ optParser.add_option("--results_folder", type=str, default="/home/stud311/work/r
 optParser.add_option("--use_PER", action="store_true", default=False)
 optParser.add_option("--per_alpha", help="Alpha for PER", type=float, default=0.6)
 optParser.add_option("--per_beta", help="Beta for PER", type=float, default=0.4)
-optParser.add_option("--per_beta_update", help="Beta update for PER", type=float, default=0.00002)
+optParser.add_option("--per_beta_update", help="Beta update for PER", type=float, default=None)
 # agent parameters
 optParser.add_option("--actor_lr", type=float, default=1e-4)
 optParser.add_option("--critic_lr", type=float, default=1e-3)
@@ -57,7 +57,6 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")   
     env = h_env.HockeyEnv(h_env.Mode.NORMAL)
-    random_opponent = RandomAgent(env.observation_space, env.action_space)
     weak_opponent = h_env.BasicOpponent(weak=True)
     strong_opponent = h_env.BasicOpponent(weak=False) 
     

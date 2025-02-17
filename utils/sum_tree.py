@@ -67,10 +67,7 @@ class SumTree:
             idx (int): The index of the transition in the sum tree.
             priority (float): The new priority of the transition.
         """
-        if np.isnan(priority) or priority <= 0:
-            print(f"Warning: Attempted to update priority with invalid value {priority}")
-            print(f"Priority: {priority}")
-            return  # Ignore invalid updates
+    
         change = priority - self.tree[idx]
         self.tree[idx] = priority
         
@@ -104,8 +101,7 @@ class SumTree:
         """
         leaf_idx = self._retrieve(0, v)
         data_idx = leaf_idx - self.capacity + 1
-        if data_idx < 0 or data_idx >= len(self.data):
-            raise ValueError(f"Invalid data_idx {data_idx} in get_leaf()")
+       
         return leaf_idx, self.tree[leaf_idx], self.data[data_idx]
 
         

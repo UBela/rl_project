@@ -12,7 +12,7 @@ class TD3Agent(object):
         
         self._observation_space = observation_space
         self._action_space = action_space
-        self._action_n = action_space.shape[0] //2 # agent should output action of shape (4,)
+        self._action_n = action_space.shape[0] // 2 # agent should output action of shape (4,)
         self._config = {
             "actor_lr": 0.0003,
             "critic_lr": 0.0003,
@@ -78,19 +78,14 @@ class TD3Agent(object):
         self.actor_net_target.load_state_dict(self.actor_net.state_dict())
         
     def act(self, observation):
-        #print(self.total_steps)
-        if self.total_steps < self._config["exploration_steps"]:
-            # random action of shape (self._action_n,) bounded by low and high
-            action = np.random.uniform(self._action_space.low[0], self._action_space.high[0], size=self._action_n)
-        else:
-            with torch.no_grad():
-                state = torch.from_numpy(observation.astype(np.float32)).to(device)
-                action = self.actor_net.forward(state)
-                action = action.cpu().detach().numpy()
-                # Add Gaussian noise to the action
-                noise = np.random.normal(0, self._config["noise_std"], size=self._action_n)
-                action = action + noise
-                action = np.clip(action, self._action_space.low[0], self._action_space.high[0])
+        with torch.no_grad():
+            state = torch.from_numpy(observation.astype(np.float32)).to(device)
+            action = self.actor_net.forward(state)
+            action = action.cpu().detach().numpy()
+            # Add Gaussian noise to the action
+            noise = np.random.normal(0, self._config["noise_std"], size=self._action_n)
+            action = action + noise
+            action = np.clip(action, self._action_space.low[0], self._action_space.high[0])
             
         self.total_steps += 1
         return action
@@ -132,9 +127,7 @@ class TD3Agent(object):
             target (_type_): _description_
             weight (_type_): _description_
         """
-        td_error = pred - target
-        
-        weighted_squared_error = weight * td_error * td_error
+        weighted_squared_error = weight * (pred - target) ** 2
         return weighted_squared_error.mean()
     
     
@@ -186,22 +179,12 @@ class TD3Agent(object):
             
             td_error = torch.abs(q1 - td_target).detach().cpu().numpy()
             
-            #check if q1 or td_target is nan
-            if torch.isnan(q1).any() or torch.isnan(td_target).any():
-                print("weights",weights)
-                print("loss",critic_loss)
-                print("q1: ", q1)
-                print("td_target: ", td_target)
-                raise ValueError("NaN detected in TD3 loss computation!")
-                
-             
             if self._use_prioritized:
                 self.replay_buffer.update_priorities(idxs, td_error)
             
             self.critic_net.optimizer.zero_grad()
             critic_loss.backward()
             self.critic_net.optimizer.step()
-           
             
             # Policy update
             if self.train_iter % self._config["policy_update_freq"] == 0:
