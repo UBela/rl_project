@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 # Umgebung
 env = h_env.HockeyEnv()
-basic_opponent = h_env.BasicOpponent(weak=False)
+basic_opponent = h_env.BasicOpponent(weak=True)
 
 # Modell laden
 agent = SACAgent(state_dim=env.observation_space.shape[0], action_dim=env.action_space.shape[0])

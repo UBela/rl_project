@@ -58,7 +58,7 @@ class SACAgent:
         self.gamma = gamma
         self.tau = tau
         self.alpha = alpha
-        self.device = torch.device(device)
+        self.device = torch.device("cuda" if (device is None and torch.cuda.is_available()) else "cpu")
 
         self.value_net = ValueNetwork(state_dim, hidden_dim).to(self.device)
         self.target_value_net = ValueNetwork(state_dim, hidden_dim).to(self.device)

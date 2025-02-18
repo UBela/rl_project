@@ -27,8 +27,10 @@ action_dim = env.action_space.shape[0]
 # Replay Buffer
 replay_buffer = ReplayBuffer(max_size=1000000)
 
-# SAC-Agent
-agent = SACAgent(state_dim, action_dim, gamma=args.gamma, tau=args.tau, lr=args.learning_rate)
+# SAC-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Gerät für Training: {device}")
+agent = SACAgent(state_dim, action_dim, gamma=args.gamma, tau=args.tau, lr=args.learning_rate, device=device)
 
 # Trainer
 trainer = Trainer(agent, env, replay_buffer, args)
@@ -36,4 +38,4 @@ trainer.train()
 
 # Modell speichern
 torch.save(agent.policy_net.state_dict(), args.save_model)
-print(f"✅ Modell gespeichert unter: {args.save_model}")
+print(f"Modell gespeichert unter: {args.save_model}")
