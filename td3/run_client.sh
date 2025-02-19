@@ -1,5 +1,5 @@
 #!/bin/bash --login
-#SBATCH -J td3_10               # Job name
+#SBATCH -J run_client              # Job name
 #SBATCH --ntasks=1                 # Number of tasks
 #SBATCH --cpus-per-task=1          # Number of CPU cores per task
 #SBATCH --nodes=1                  # Ensure that all cores are on the same machine with nodes=1
@@ -31,7 +31,9 @@ cd /mnt/qb/work/ludwig/lqb122/rl_project/td3
 
 # Run your code
 echo "-------- PYTHON OUTPUT ----------"
-python3 train_agent.py --results_folder ./results/both/per_best_update_5_tau_0.01 --use_PER --max_episodes 30000 --self_play_start 16000 --actor_lr 0.0003 --critic_lr 0.0003 --per_beta_update 0.0006 --per_alpha 0.3 --policy_update_freq 5 --tau 0.01
+python3 ./run_client.py --server-url 'comprl.cs.uni-tuebingen.de' --server-port 65335 \
+    --token 'e2c1cb62-3887-446d-a549-857470b8a94d' --args --state_path=./results/both/per_best_update_every_5/td3_30000-t32-sNone.pth
+
 
 
 # Check if Python script ran successfully
@@ -44,4 +46,3 @@ echo "---------------------------------"
 
 # Deactivate environment again
 conda deactivate
-

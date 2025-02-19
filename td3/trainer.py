@@ -27,7 +27,7 @@ class TD3Trainer:
         with open(f"{self.config['results_folder']}/results_td3_t{train_iter}_stats.pkl", "wb") as f:
             pickle.dump({"rewards": rewards, "lengths": lengths, "losses": losses, 
                          "wins": wins_per_episode, "loses": loses_per_episode, 
-                         "eval_wins_easy": eval_wins_easy, "eval_loses_hard": eval_loses_easy,
+                         "eval_wins_easy": eval_wins_easy, "eval_loses_easy": eval_loses_easy,
                          "eval_wins_hard": eval_wins_hard, "eval_loses_hard": eval_loses_hard}, f)
     
     def _select_opponent(self, opponents: list):

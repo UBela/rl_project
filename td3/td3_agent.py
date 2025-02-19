@@ -3,8 +3,6 @@ import numpy as np
 from td3.networks import Critic_Net, Actor_Net
 from utils.replay_buffer import ReplayBuffer, PriorityReplayBuffer
 import torch.nn.functional as F
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print("Device: ", device)
 
         
 class TD3Agent(object):
@@ -21,12 +19,11 @@ class TD3Agent(object):
             "batch_size": 128,
             "hidden_dim_critic": [256, 256],
             "hidden_dim_actor": [256, 256],
-            "noise": "Gaussian",
+            "noise_type": "Gaussian",
             "noise_clip": 0.3,
             "noise_std": 0.2,
             "policy_update_freq": 2,
             "buffer_size": int(1e6),
-            "exploration_steps": 2000,
             
         }
         
@@ -83,7 +80,11 @@ class TD3Agent(object):
             action = self.actor_net.forward(state)
             action = action.cpu().detach().numpy()
             # Add Gaussian noise to the action
-            noise = np.random.normal(0, self._config["noise_std"], size=self._action_n)
+            if self._config["noise_type"] == "Pink":
+                #TODO Implement Pink noise
+                pass
+            else:
+                noise = np.random.normal(0, self._config["noise_std"], size=self._action_n)
             action = action + noise
             action = np.clip(action, self._action_space.low[0], self._action_space.high[0])
             

@@ -30,11 +30,6 @@ def evaluate(agent, env, opponent, max_episodes=100, max_timesteps=1000, render 
             
             reward = reward_player_2(env) if not agent_is_player_1 else reward
 
-            if agent_is_player_1:
-                agent.store_transition((ob, a1, reward, ob_new, done))
-            else:
-                agent.store_transition((ob, a2, reward, ob_new, done))
-            
             total_reward += reward
             ob_new_copy = ob_new  
             if agent_is_player_1:

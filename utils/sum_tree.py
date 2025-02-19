@@ -79,6 +79,7 @@ class SumTree:
 
         Args:
             priority (float): The priority of the new transition.
+            data (object): The data associated with the transition.
         """
         leaf_idx = self._data_pointer + self.capacity - 1 
         
