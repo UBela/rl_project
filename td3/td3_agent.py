@@ -7,7 +7,7 @@ import torch.nn.functional as F
         
 class TD3Agent(object):
     def __init__(self, observation_space, action_space, device, userconfig):
-        
+        self.device = device
         self._observation_space = observation_space
         self._action_space = action_space
         self._action_n = action_space.shape[0] // 2 # agent should output action of shape (4,)
@@ -20,16 +20,22 @@ class TD3Agent(object):
             "hidden_dim_critic": [256, 256],
             "hidden_dim_actor": [256, 256],
             "noise_type": "Gaussian",
-            "noise_clip": 0.3,
+            "noise_clip": 0.5,
             "noise_std": 0.2,
             "policy_update_freq": 2,
-            "buffer_size": int(1e6),
+            "buffer_size": int(2**20),
+            "use_PER": True,
+            "per_alpha": 0.3,
+            "per_beta": 0.4,
+            "per_beta_update": 0.0006
             
         }
-        
-        self._config.update(userconfig)    
+        if userconfig:
+            self._config.update(userconfig)    
+            
         self._noise_clamp = self._config["noise_clip"]
         self._use_prioritized = self._config["use_PER"]
+        
         if not self._use_prioritized:
             print("Use simple Experience Replay")
             self.replay_buffer = ReplayBuffer(max_size=self._config["buffer_size"])
@@ -43,31 +49,32 @@ class TD3Agent(object):
             action_dim=self._action_n, 
             hidden_dims=self._config["hidden_dim_critic"],
             lr=self._config["critic_lr"]
-        ).to(device)
+        ).to(self.device)
         self.critic_net_target = Critic_Net(
             observation_dim=self._observation_space.shape[0],
             action_dim=self._action_n, 
             hidden_dims=self._config["hidden_dim_critic"],
             lr=0  # No optimizer for the target network
-        ).to(device)
+        ).to(self.device)
         
         self.actor_net = Actor_Net(
             input_dim=self._observation_space.shape[0],
             hidden_dims=self._config["hidden_dim_actor"],
             output_dim=self._action_n,
             lr=self._config["actor_lr"]
-        ).to(device)
+        ).to(self.device)
         self.actor_net_target = Actor_Net(
             input_dim=self._observation_space.shape[0],
             hidden_dims=self._config["hidden_dim_actor"],
             output_dim=self._action_n,
             lr=0  # No optimizer for the target network
-        ).to(device)
+        ).to(self.device)
         
         self._copy_nets()
         
         self.train_iter = 0 
         self.total_steps = 0
+        self.in_training = True
         
 
     def _copy_nets(self):
@@ -75,8 +82,16 @@ class TD3Agent(object):
         self.actor_net_target.load_state_dict(self.actor_net.state_dict())
         
     def act(self, observation):
+        # Need to check for type since competition server sends observation as a list
         with torch.no_grad():
-            state = torch.from_numpy(observation.astype(np.float32)).to(device)
+            if isinstance(observation, np.ndarray):
+                state = torch.from_numpy(observation.astype(np.float32)).to(self.device)
+            elif isinstance(observation, list):
+                state = torch.tensor(observation, dtype=torch.float32).to(self.device)
+            elif isinstance(observation, torch.Tensor):
+                state = observation
+            else:
+                raise ValueError("Invalid observation type")
             action = self.actor_net.forward(state)
             action = action.cpu().detach().numpy()
             # Add Gaussian noise to the action
@@ -85,8 +100,10 @@ class TD3Agent(object):
                 pass
             else:
                 noise = np.random.normal(0, self._config["noise_std"], size=self._action_n)
-            action = action + noise
-            action = np.clip(action, self._action_space.low[0], self._action_space.high[0])
+            #only add noise if training
+            if self.in_training:
+                action = action + noise
+                action = np.clip(action, self._action_space.low[0], self._action_space.high[0])
             
         self.total_steps += 1
         return action
@@ -111,13 +128,14 @@ class TD3Agent(object):
         self.critic_net.train()
         self.actor_net_target.train()
         self.critic_net_target.train()
+        self.in_training = True
         
     def set_to_eval(self):
         self.actor_net.eval()
         self.critic_net.eval()
         self.actor_net_target.eval()
         self.critic_net_target.eval()
-    
+        self.in_training = False
     
         
     def mse(self, pred, target, weight):
@@ -147,31 +165,31 @@ class TD3Agent(object):
                 transitions = self.replay_buffer.sample(batch_size=self._config["batch_size"])
             else:
                 transitions, idxs, weights = self.replay_buffer.sample(batch_size=self._config["batch_size"])
-                weights = torch.from_numpy(weights).to(device)
+                weights = torch.from_numpy(weights).to(self.device)
                 
-            s = to_torch(np.stack(transitions[:, 0])).to(device)
-            a = to_torch(np.stack(transitions[:, 1])).to(device)
-            r = to_torch(np.stack(transitions[:, 2])[:, None]).to(device)
-            s_prime = to_torch(np.stack(transitions[:, 3])).to(device)
-            done = to_torch(np.stack(transitions[:, 4])[:, None]).to(device)
+            s = to_torch(np.stack(transitions[:, 0])).to(self.device)
+            a = to_torch(np.stack(transitions[:, 1])).to(self.device)
+            r = to_torch(np.stack(transitions[:, 2])[:, None]).to(self.device)
+            s_prime = to_torch(np.stack(transitions[:, 3])).to(self.device)
+            done = to_torch(np.stack(transitions[:, 4])[:, None]).to(self.device)
             
             with torch.no_grad():
                 
-                a_prime = self.actor_net_target.forward(s_prime).to(device)
-                noise = torch.clamp(torch.randn(a_prime.shape) * self._config["noise_std"], -self._noise_clamp, self._noise_clamp).to(device)
+                a_prime = self.actor_net_target.forward(s_prime).to(self.device)
+                noise = torch.clamp(torch.randn(a_prime.shape) * self._config["noise_std"], -self._noise_clamp, self._noise_clamp).to(self.device)
                 a_prime = torch.clamp(a_prime + noise, -1, 1)
                 
                 # Get Q-values from the target Q-function
                 q1_prime, q2_prime = self.critic_net_target.forward(torch.cat([s_prime, a_prime], dim=1))
                 
-                q_prime_min = torch.min(q1_prime, q2_prime).to(device)
+                q_prime_min = torch.min(q1_prime, q2_prime).to(self.device)
                 gamma = self._config["discount"]
                 td_target = r + gamma * (1 - done) * q_prime_min
-                td_target = td_target.to(device)
+                td_target = td_target.to(self.device)
                 
             # Update critic_net
             q1, q2 = self.critic_net.forward(torch.cat([s, a], dim=1))
-            q1, q2 = q1.to(device), q2.to(device)
+            q1, q2 = q1.to(self.device), q2.to(self.device)
             
             if not self._use_prioritized:
                 critic_loss = F.mse_loss(q1, td_target) + F.mse_loss(q2, td_target)
