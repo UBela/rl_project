@@ -98,7 +98,7 @@ class SACTrainer:
         if self.config['use_PER']:
             print("Filling replay buffer...")
             self.fill_replay_buffer(agent, env)
-            print("Replay buffer filled.")
+            
            
         for i_episode in range(1, max_episodes + 1):
             agent_is_player_1 = np.random.choice([True, False])

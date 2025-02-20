@@ -84,8 +84,7 @@ if __name__ == '__main__':
     print(f"Preparation time: {end_prep_time - start_prep_time} seconds.")
     
     start_time = time.time()
-    if opts.use_PER:
-        trainer.fill_replay_buffer(agent, env)
+
     trainer.train(agent, opponents, env)
     
     end_time = time.time()
