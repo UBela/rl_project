@@ -113,7 +113,9 @@ class SACAgent:
         with torch.no_grad():
             action, _ = self.policy_net.sample(state)
         return action.cpu().numpy().flatten()
-
+    def act(self, state):
+        return self.select_action(state)
+    
     # 🔄 **SAC Update**
     def update(self, replay_buffer, batch_size):
         if self.use_PER:
