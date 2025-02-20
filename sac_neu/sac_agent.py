@@ -16,14 +16,17 @@ class ValueNetwork(nn.Module):
         super(ValueNetwork, self).__init__()
         self.linear1 = nn.Linear(state_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, hidden_dim)
-        self.linear3 = nn.Linear(hidden_dim, 1)
+        self.linear3 = nn.Linear(hidden_dim, hidden_dim)  # Neue Schicht
+        self.linear4 = nn.Linear(hidden_dim, 1)
 
     def forward(self, state):
         x = torch.relu(self.linear1(state))
         x = torch.relu(self.linear2(x))
-        return self.linear3(x)
+        x = torch.relu(self.linear3(x))
+        return self.linear4(x)
 
-# 🔥 **Q-Wert-Netzwerk**
+
+# **Q-Wert-Netzwerk**
 class SoftQNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_dim):
         super(SoftQNetwork, self).__init__()
@@ -94,20 +97,21 @@ class SACAgent:
         self.soft_q_optimizer2 = optim.Adam(self.soft_q_net2.parameters(), lr=q_lr)
         self.policy_optimizer = optim.Adam(self.policy_net.parameters(), lr=policy_lr)
 
-        # 📌 **Target Value Netzwerke kopieren**
+        # **Target Value Netzwerke kopieren**
         for target_param, param in zip(self.target_value_net.parameters(), self.value_net.parameters()):
             target_param.data.copy_(param.data)
 
-        # 🔥 **Automatische Alpha-Anpassung**
+        #  **Automatische Alpha-Anpassung**
         if self.automatic_entropy_tuning:
             self.target_entropy = -torch.prod(torch.Tensor([action_dim]).to(self.device)).item()
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optimizer = optim.Adam([self.log_alpha], lr=policy_lr)
+            print(f"log_alpha: {self.log_alpha.item()}, alpha: {self.alpha}")
 
-        # 📈 **PER Beta-Update**
+        #  **PER Beta-Update**
         self.per_beta_update = per_beta_update
 
-    # 🎯 **Aktion wählen**
+    #  **Aktion wählen**
     def select_action(self, state, eval=False):
         state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
         with torch.no_grad():
@@ -116,7 +120,7 @@ class SACAgent:
     def act(self, state):
         return self.select_action(state)
     
-    # 🔄 **SAC Update**
+    # **SAC Update**
     def update(self, replay_buffer, batch_size):
         if self.use_PER:
             batch, tree_idxs, weights = replay_buffer.sample(batch_size)
@@ -161,5 +165,15 @@ class SACAgent:
         if self.use_PER:
             td_errors = torch.abs(q1_pred - target_q_value).detach().cpu().numpy()
             replay_buffer.update_priorities(tree_idxs, td_errors)
+        if self.automatic_entropy_tuning:
+            alpha_loss = -(self.log_alpha * (log_prob + self.target_entropy).detach()).mean()
+
+            self.alpha_optimizer.zero_grad()
+            alpha_loss.backward()
+            self.alpha_optimizer.step()
+
+            self.alpha = self.log_alpha.exp().item()
+            #print(f"Updated alpha: {self.alpha}")
+
 
         return [q1_loss.item(), q2_loss.item(), policy_loss.item()]
