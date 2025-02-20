@@ -65,7 +65,7 @@ class PolicyNetwork(nn.Module):
 # 🚀 **SAC-Agent**
 class SACAgent:
     def __init__(self, state_dim, action_dim, hidden_dim=256, gamma=0.99, tau=0.005, alpha=0.0,
-                 automatic_entropy_tuning=False, policy_lr=1e-4, q_lr=1e-3, value_lr=1e-3, 
+                 automatic_entropy_tuning=True, policy_lr=1e-4, q_lr=1e-3, value_lr=1e-3, 
                  buffer_size=int(2**20), per_alpha=0.6, per_beta=0.4, per_beta_update=None, use_PER=True, device="cpu"):
         
         self.gamma = gamma

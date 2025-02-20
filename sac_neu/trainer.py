@@ -177,8 +177,10 @@ class SACTrainer:
                 print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, avg_reward))
                 print(f"Winrate: {sum(wins_per_episode.values())/i_episode:.3f} Lossrate: {sum(loses_per_episode.values())/i_episode:.3f}")
                 
+                
             if i_episode % evaluate_every == 0 or i_episode == max_episodes:
                 agent.policy_net.eval()
+                print(f"alpha:{agent.alpha}")
                 print("########## Evaluating agent...########## ")
                 print("Against weak opponent...")
                 wins, loses = evaluate(agent, env, opponents[0], max_episodes=100, max_timesteps=1000, render=False, agent_is_player_1=agent_is_player_1)
