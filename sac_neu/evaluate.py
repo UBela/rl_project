@@ -1,51 +1,55 @@
-import torch
+import sys
+sys.path.insert(0, '.')
+sys.path.insert(1, '..')
 import numpy as np
-import hockey.hockey_env as h_env
-from sac_agent import SACAgent
-import matplotlib.pyplot as plt
+from td3.utils import reward_player_2  # Falls es benötigt wird
 
-# Umgebung
-env = h_env.HockeyEnv()
-basic_opponent = h_env.BasicOpponent(weak=True)
+def evaluate(agent, env, opponent, max_episodes=100, max_timesteps=1000, render=False, agent_is_player_1=True):
+    
+    wins_per_episode = np.zeros(max_episodes + 1)
+    loses_per_episode = np.zeros(max_episodes + 1)
+    
+    for i_episode in range(1, max_episodes + 1):
+        ob, _ = env.reset()
+        obs_agent2 = env.obs_agent_two()
+        
+        total_reward = 0
+        wins_per_episode[i_episode] = 0
+        loses_per_episode[i_episode] = 0
+        
+        for t in range(max_timesteps):
+            
+            if agent_is_player_1:
+                a1 = agent.select_action(ob)  # **SAC verwendet `select_action()`**
+                a2 = opponent.act(obs_agent2)
+                actions = np.hstack([a1, a2])
+            else:
+                a1 = opponent.act(obs_agent2)
+                a2 = agent.select_action(ob)  # **SAC verwendet `select_action()`**
+                actions = np.hstack([a1, a2])
 
-# Modell laden
-agent = SACAgent(state_dim=env.observation_space.shape[0], action_dim=env.action_space.shape[0])
-agent.policy_net.load_state_dict(torch.load("saved_models/sac_model.pth"))
-agent.policy_net.eval()
+            (ob_new, reward, done, trunc, _info) = env.step(actions)
+            if render: env.render()
+            
+            reward = reward_player_2(env) if not agent_is_player_1 else reward  # Falls Reward-Skalierung notwendig ist
 
-# Testen
-NUM_EPISODES = 100
-wins, losses, rewards = 0, 0, []
+            total_reward += reward
+            ob_new_copy = ob_new  
+            if agent_is_player_1:
+                ob = ob_new
+                obs_agent2 = env.obs_agent_two()
+            else:
+                ob = ob_new_copy  
+                obs_agent2 = env.obs_agent_two()
 
-for episode in range(NUM_EPISODES):
-    state, _ = env.reset()
-    episode_reward = 0
-    done = False
-
-    while not done:
-        action, _ = agent.policy_net.sample(torch.FloatTensor(state))
-        action = action.detach().cpu().numpy()
-        next_state, reward, done, _, _ = env.step(action)
-        episode_reward += reward
-        state = next_state
-
-    rewards.append(episode_reward)
-    if episode_reward > 0:
-        wins += 1
-    else:
-        losses += 1
-
-# Win-Rate berechnen
-win_rate = (wins / NUM_EPISODES) * 100
-print(f"Win-Rate: {win_rate:.2f}% ({wins} Siege, {losses} Niederlagen)")
-
-# Rewards plotten
-plt.figure(figsize=(10, 5))
-plt.plot(rewards, label="Test Rewards")
-plt.axhline(y=0, color="r", linestyle="--", label="Win/Loss Grenze")
-plt.xlabel("Episode")
-plt.ylabel("Reward")
-plt.title("SAC vs. BasicOpponent - Test Ergebnisse")
-plt.legend()
-plt.savefig("plots/sac_evaluation.png")
-plt.show()
+            if done or trunc:
+                winner = _info.get('winner', None)
+                if agent_is_player_1:
+                    wins_per_episode[i_episode] = 1 if winner == 1 else 0
+                    loses_per_episode[i_episode] = 1 if winner == -1 else 0
+                else:
+                    wins_per_episode[i_episode] = 1 if winner == -1 else 0
+                    loses_per_episode[i_episode] = 1 if winner == 1 else 0
+                break
+    
+    return wins_per_episode, loses_per_episode
