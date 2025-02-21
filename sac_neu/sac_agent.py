@@ -56,7 +56,7 @@ class PolicyNetwork(nn.Module):
         x = torch.relu(self.linear1(state))
         x = torch.relu(self.linear2(x))
         mean = self.mean(x)
-        log_std = torch.clamp(self.log_std(x), -20, 2)
+        log_std = torch.clamp(self.log_std(x), -15, 2)
         return mean, log_std
 
     def sample(self, state):
@@ -142,14 +142,16 @@ class SACAgent:
         done = torch.FloatTensor(np.vstack(done)).to(self.device)
 
         target_value = self.target_value_net(next_state)
-        target_q_value = reward + (1 - done) * self.gamma * target_value
-
+        target_q_value = reward + (1 - done) * self.gamma * (target_value - 0.01 * torch.randn_like(target_value))
         q1_pred = self.soft_q_net1(state, action)
         q2_pred = self.soft_q_net2(state, action)
 
         weights = torch.tensor(weights, dtype=torch.float32, device=self.device).unsqueeze(1)  
         q1_loss = (weights * nn.functional.mse_loss(q1_pred, target_q_value.detach(), reduction='none')).mean()
         q2_loss = (weights * nn.functional.mse_loss(q2_pred, target_q_value.detach(), reduction='none')).mean()
+
+        q1_loss = torch.clamp(q1_loss, -1, 1)
+        q2_loss = torch.clamp(q2_loss, -1, 1)
 
         self.soft_q_optimizer1.zero_grad()
         q1_loss.backward()
@@ -169,6 +171,7 @@ class SACAgent:
 
         if self.use_PER:
             td_errors = torch.abs(q1_pred - target_q_value).detach().cpu().numpy()
+            td_errors = torch.clamp(td_errors, -1, 1)
             replay_buffer.update_priorities(tree_idxs, td_errors)
         if self.automatic_entropy_tuning:
             alpha_loss = -(self.log_alpha * (log_prob + self.target_entropy).detach()).mean()
