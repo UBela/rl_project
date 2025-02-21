@@ -100,6 +100,10 @@ class SACAgent:
         self.soft_q_optimizer2 = optim.Adam(self.soft_q_net2.parameters(), lr=q_lr)
         self.policy_optimizer = optim.Adam(self.policy_net.parameters(), lr=policy_lr)
 
+        self.scheduler_q = optim.lr_scheduler.StepLR(self.soft_q_optimizer1, step_size=5000, gamma=0.5)
+        self.scheduler_q2 = optim.lr_scheduler.StepLR(self.soft_q_optimizer2, step_size=5000, gamma=0.5)
+        self.scheduler_policy = optim.lr_scheduler.StepLR(self.policy_optimizer, step_size=5000, gamma=0.5)
+
         # **Target Value Netzwerke kopieren**
         for target_param, param in zip(self.target_value_net.parameters(), self.value_net.parameters()):
             target_param.data.copy_(param.data)
@@ -168,6 +172,11 @@ class SACAgent:
         self.policy_optimizer.zero_grad()
         policy_loss.backward()
         self.policy_optimizer.step()
+
+        self.scheduler_q.step()
+        self.scheduler_q2.step()
+        self.scheduler_policy.step()
+
 
         if self.use_PER:
             td_errors = torch.abs(q1_pred - target_q_value).detach().cpu().numpy()
