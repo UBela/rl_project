@@ -171,7 +171,8 @@ class SACAgent:
 
         if self.use_PER:
             td_errors = torch.abs(q1_pred - target_q_value).detach().cpu().numpy()
-            td_errors = torch.clamp(td_errors, -1, 1)
+            td_errors = torch.clamp(torch.tensor(td_errors, device=self.device, dtype=torch.float32), -1, 1)
+
             replay_buffer.update_priorities(tree_idxs, td_errors)
         if self.automatic_entropy_tuning:
             alpha_loss = -(self.log_alpha * (log_prob + self.target_entropy).detach()).mean()
