@@ -56,7 +56,7 @@ class PolicyNetwork(nn.Module):
         x = torch.relu(self.linear1(state))
         x = torch.relu(self.linear2(x))
         mean = self.mean(x)
-        log_std = torch.clamp(self.log_std(x), -15, 2)
+        log_std = torch.clamp(self.log_std(x), -10, 2)
         return mean, log_std
 
     def sample(self, state):
@@ -106,7 +106,7 @@ class SACAgent:
 
         #  **Automatische Alpha-Anpassung**
         if self.automatic_entropy_tuning:
-            self.target_entropy = -torch.prod(torch.Tensor([action_dim]).to(self.device)).item()
+            self.target_entropy = -0.7*torch.prod(torch.Tensor([action_dim]).to(self.device)).item()
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optimizer = optim.Adam([self.log_alpha], lr=policy_lr)
             print(f"log_alpha: {self.log_alpha.item()}, alpha: {self.alpha}")
@@ -142,7 +142,7 @@ class SACAgent:
         done = torch.FloatTensor(np.vstack(done)).to(self.device)
 
         target_value = self.target_value_net(next_state)
-        target_q_value = reward + (1 - done) * self.gamma * (target_value - 0.01 * torch.randn_like(target_value))
+        target_q_value = reward + (1 - done) * self.gamma * (target_value - 0.002 * torch.randn_like(target_value).detach())
         q1_pred = self.soft_q_net1(state, action)
         q2_pred = self.soft_q_net2(state, action)
 
