@@ -13,10 +13,7 @@ from evaluate import evaluate
 from hockey import hockey_env as h_env
 import copy
 import json
-log_results_filename = "logs/evaluation_log.json"
-if not os.path.exists(log_results_filename):
-    with open(log_results_filename, "w") as f:
-        json.dump([], f)
+
 
 class SACTrainer:
     
@@ -31,6 +28,12 @@ class SACTrainer:
         else:
             self.replay_buffer = ReplayBuffer(config["buffer_size"])
         
+        self.log_results_filename = f"{self.config['results_folder']}/evaluation_log.json"
+        if not os.path.exists(self.log_results_filename):
+            with open(self.log_results_filename, "w") as f:
+                json.dump([], f)
+
+                
     def _save_statistics(self, rewards, lengths, losses, wins_per_episode, loses_per_episode, train_iter, eval_wins_easy, eval_loses_easy, eval_wins_hard, eval_loses_hard):
         if not self.config['use_hard_opp']:
             eval_wins_hard = None
@@ -218,7 +221,7 @@ class SACTrainer:
                 }
 
                 # JSON-Datei aktualisieren
-                with open(log_results_filename, "r+") as f:
+                with open(self.log_results_filename, "r+") as f:
                     logs = json.load(f)
                     logs.append(log_data)
                     f.seek(0)

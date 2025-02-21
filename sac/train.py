@@ -8,7 +8,7 @@ import argparse
 import torch
 import hockey.hockey_env as h_env
 from utils.replay_buffer import ReplayBuffer
-from td3.evaluate import evaluate_agent
+from td3.evaluate import evaluate
 from sac_agent import SACAgent
 from td3.td3_agent import TD3Agent
 
