@@ -10,7 +10,7 @@ import numpy as np
 from utils import *
 from torch.distributions import Normal
 from utils.replay_buffer import ReplayBuffer, PriorityReplayBuffer
-
+import json
 os.makedirs("logs", exist_ok=True)
 log_file = open("logs/training_log.txt", "a")
 
@@ -72,15 +72,24 @@ class PolicyNetwork(nn.Module):
 class SACAgent:
     def __init__(self, state_dim, action_dim, hidden_dim=256, gamma=0.99, tau=0.005, alpha=0.0,
                  automatic_entropy_tuning=True, policy_lr=1e-4, q_lr=1e-3, value_lr=1e-3, 
-                 buffer_size=int(2**20), per_alpha=0.6, per_beta=0.4, per_beta_update=None, use_PER=True, device="cpu"):
-        
+                 buffer_size=int(2**20), per_alpha=0.6, per_beta=0.4, per_beta_update=None, 
+                 use_PER=True, device="cpu", results_folder="./results"):
+
         self.gamma = gamma
         self.tau = tau
         self.alpha = alpha
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.automatic_entropy_tuning = automatic_entropy_tuning
         self.use_PER = use_PER
+        self.results_folder = results_folder 
 
+        os.makedirs(self.results_folder, exist_ok=True)
+        self.training_log_filename = os.path.join(self.results_folder, "training_log.json")
+
+        # **Falls die Datei nicht existiert, erstelle eine leere JSON-Datei**
+        if not os.path.exists(self.training_log_filename):
+            with open(self.training_log_filename, "w") as f:
+                json.dump([], f)
         # 🏆 **Replay Buffer wählen (Prioritized oder normal)**
         if use_PER:
             self.replay_buffer = PriorityReplayBuffer(buffer_size, alpha=per_alpha, beta=per_beta)
@@ -117,7 +126,13 @@ class SACAgent:
 
         #  **PER Beta-Update**
         self.per_beta_update = per_beta_update
-
+    def _log_training_data(self, log_data):
+        """ Speichert Trainingsdaten als JSON in `training_log.json` """
+        with open(self.training_log_filename, "r+") as f:
+            logs = json.load(f)
+            logs.append(log_data)
+            f.seek(0)
+            json.dump(logs, f, indent=4)
     #  **Aktion wählen**
     def select_action(self, state, eval=False):
         state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
@@ -177,7 +192,17 @@ class SACAgent:
         self.scheduler_q2.step()
         self.scheduler_policy.step()
 
-
+        log_data = {
+            "td_error_mean": q1_loss.item(),
+            "td_error_std": q2_loss.item(),
+            "q1_loss": q1_loss.item(),
+            "q2_loss": q2_loss.item(),
+            "policy_loss": policy_loss.item(),
+            "log_prob_mean": log_prob.mean().item(),
+            "log_prob_std": log_prob.std().item(),
+            "alpha": self.alpha if self.automatic_entropy_tuning else None
+        }
+        self._log_training_data(log_data)
         if self.use_PER:
             td_errors = torch.abs(q1_pred - target_q_value).detach().cpu().numpy()
             td_errors = torch.clamp(torch.tensor(td_errors, device=self.device, dtype=torch.float32), -1, 1)
@@ -192,17 +217,17 @@ class SACAgent:
 
             self.alpha = self.log_alpha.exp().item()
             #print(f"Updated alpha: {self.alpha}")
-        log_msg = (
+        '''log_msg = (
             f"TD Error Mean: {td_errors.mean():.4f}, TD Error Std: {td_errors.std():.4f}, "
             f"Q1 Loss: {q1_loss.item():.4f}, Q2 Loss: {q2_loss.item():.4f}, "
             f"Policy Loss: {policy_loss.item():.4f}, "
             f"Log Prob Mean: {log_prob.mean().item():.4f}, Log Prob Std: {log_prob.std().item():.4f}, "
-        )
+        )'''
         
-        if self.automatic_entropy_tuning:
-            log_msg += f"Alpha: {self.alpha:.4f}, Log Alpha: {self.log_alpha.item():.4f}\n"
+        #if self.automatic_entropy_tuning:
+        #    log_msg += f"Alpha: {self.alpha:.4f}, Log Alpha: {self.log_alpha.item():.4f}\n"
         
-        log_file.write(log_msg)
-        log_file.flush() 
+        '''log_file.write(log_msg)
+        log_file.flush() '''
 
         return [q1_loss.item(), q2_loss.item(), policy_loss.item()]
