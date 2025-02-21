@@ -42,8 +42,20 @@ class SACTrainer:
                          "eval_wins_easy": eval_wins_easy, "eval_loses_hard": eval_loses_easy,
                          "eval_wins_hard": eval_wins_hard, "eval_loses_hard": eval_loses_hard}, f)
     
-    def _select_opponent(self, opponents: list):
-        return np.random.choice(opponents)
+    def _select_opponent(self, opponents, i_episode, win_rate):
+        phase1 = int(self.config["max_episodes"] * 0.3)  # Erste 30%: Nur schwache Gegner
+        phase2 = int(self.config["max_episodes"] * 0.6)  # Bis 60%: Mischung
+        phase3 = int(self.config["max_episodes"] * 0.8)  # Danach Self-Play
+        
+        if i_episode < phase1:
+            return opponents[0]  # Nur schwache Gegner
+        elif i_episode < phase2:
+            return np.random.choice([opponents[0], opponents[1]])  # Mischung
+        elif win_rate < 0.3 and i_episode < phase3:
+            return opponents[1]  # Stärkerer Gegner nur wenn nötig
+        else:
+            return np.random.choice(opponents)  # Volles Self-Play aktiv
+
         
     def _add_self_play_agent(self, agent, opponents, i_episode):
         if not self.config['use_self_play']:
@@ -59,7 +71,8 @@ class SACTrainer:
         while len(self.replay_buffer) < self.config["buffer_size"]:
             ob, _ = env.reset()
             obs_agent2 = env.obs_agent_two()
-            opponent = self._select_opponent([h_env.BasicOpponent(weak=True), h_env.BasicOpponent(weak=False)])
+            opponent = self._select_opponent([h_env.BasicOpponent(weak=True), h_env.BasicOpponent(weak=False)], i_episode=0, win_rate=0.0)
+
             done = False
             trunc = False
 
@@ -118,7 +131,8 @@ class SACTrainer:
             loses_per_episode[i_episode] = 0
             
             if self.config['use_self_play']:
-                opponent = self._select_opponent(opponents)
+                opponent = self._select_opponent(opponents, i_episode=i_episode, win_rate=wins_per_episode.get(i_episode, 0.0))
+
             else:
                 opponent = opponents[1]
             
@@ -135,7 +149,19 @@ class SACTrainer:
                 
                 (ob_new, reward, done, trunc, _info) = env.step(actions)
 
-                reward = reward_player_2(env) if not agent_is_player_1 else reward
+                
+                reward_closeness_to_puck = _info.get("reward_closeness_to_puck", 0.0)
+                reward_touch_puck = _info.get("reward_touch_puck", 0.0)
+                reward_puck_direction = _info.get("reward_puck_direction", 0.0)
+
+                
+                adjusted_reward = (
+                    2.0 * reward_closeness_to_puck +  
+                    1.5 * reward_touch_puck +         
+                    1.0 * reward_puck_direction       # Kontrollierte Puck-Richtung
+                )
+
+                reward = adjusted_reward if agent_is_player_1 else -adjusted_reward  # 🔥 Anpassung für Spieler 2
 
                 if agent_is_player_1:
                     agent.replay_buffer.add_transition([ob, a1, reward, ob_new, done])
