@@ -127,12 +127,27 @@ class SACAgent:
         #  **PER Beta-Update**
         self.per_beta_update = per_beta_update
     def _log_training_data(self, log_data):
-        """ Speichert Trainingsdaten als JSON in `training_log.json` """
-        with open(self.training_log_filename, "r+") as f:
-            logs = json.load(f)
-            logs.append(log_data)
-            f.seek(0)
-            json.dump(logs, f, indent=4)
+        """Speichert Trainingsdaten als JSON in der Log-Datei und fängt Fehler ab."""
+        try:
+            with open(self.training_log_filename, "r+") as f:
+                try:
+                    logs = json.load(f)  # Existierende Daten laden
+                except json.JSONDecodeError:  
+                    logs = []  # Falls Fehler, starte mit leerem JSON
+
+                logs.append(log_data)
+                f.seek(0)  # Zurück an den Anfang der Datei
+                json.dump(logs, f, indent=4)
+                f.truncate()  # Falls die Datei vorher größer war, kürzen
+        except Exception as e:
+            print(f"⚠️ Fehler beim Schreiben der Log-Datei: {e}")
+
+            """ Speichert Trainingsdaten als JSON in `training_log.json` """
+            with open(self.training_log_filename, "r+") as f:
+                logs = json.load(f)
+                logs.append(log_data)
+                f.seek(0)
+                json.dump(logs, f, indent=4)
     #  **Aktion wählen**
     def select_action(self, state, eval=False):
         state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
