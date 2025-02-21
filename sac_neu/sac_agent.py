@@ -1,4 +1,5 @@
 import sys
+import os
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 
@@ -10,7 +11,9 @@ from utils import *
 from torch.distributions import Normal
 from utils.replay_buffer import ReplayBuffer, PriorityReplayBuffer
 
-# 🔥 **Wert-Netzwerk**
+os.makedirs("logs", exist_ok=True)
+log_file = open("logs/training_log.txt", "a")
+
 class ValueNetwork(nn.Module):
     def __init__(self, state_dim, hidden_dim):
         super(ValueNetwork, self).__init__()
@@ -174,6 +177,17 @@ class SACAgent:
 
             self.alpha = self.log_alpha.exp().item()
             #print(f"Updated alpha: {self.alpha}")
-
+        log_msg = (
+            f"TD Error Mean: {td_errors.mean():.4f}, TD Error Std: {td_errors.std():.4f}, "
+            f"Q1 Loss: {q1_loss.item():.4f}, Q2 Loss: {q2_loss.item():.4f}, "
+            f"Policy Loss: {policy_loss.item():.4f}, "
+            f"Log Prob Mean: {log_prob.mean().item():.4f}, Log Prob Std: {log_prob.std().item():.4f}, "
+        )
+        
+        if self.automatic_entropy_tuning:
+            log_msg += f"Alpha: {self.alpha:.4f}, Log Alpha: {self.log_alpha.item():.4f}\n"
+        
+        log_file.write(log_msg)
+        log_file.flush() 
 
         return [q1_loss.item(), q2_loss.item(), policy_loss.item()]
