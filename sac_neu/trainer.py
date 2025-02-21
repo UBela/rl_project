@@ -2,6 +2,7 @@ import sys
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 
+import os
 import torch
 import time
 import numpy as np
@@ -11,6 +12,11 @@ from td3.utils import *
 from evaluate import evaluate
 from hockey import hockey_env as h_env
 import copy
+import json
+log_results_filename = "logs/evaluation_log.json"
+if not os.path.exists(log_results_filename):
+    with open(log_results_filename, "w") as f:
+        json.dump([], f)
 
 class SACTrainer:
     
@@ -177,7 +183,21 @@ class SACTrainer:
                 print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, avg_reward))
                 print(f"Winrate: {sum(wins_per_episode.values())/i_episode:.3f} Lossrate: {sum(loses_per_episode.values())/i_episode:.3f}")
                 
-                
+                # 📌 Ergebnisse als JSON speichern
+                log_data = {
+                    "episode": i_episode,
+                    "win_rate": sum(wins_per_episode.values())/i_episode,
+                    "loss_rate": sum(loses_per_episode.values())/i_episode,
+                    "avg_reward": avg_reward
+                }
+
+                # JSON-Datei aktualisieren
+                with open(log_results_filename, "r+") as f:
+                    logs = json.load(f)
+                    logs.append(log_data)
+                    f.seek(0)
+                    json.dump(logs, f, indent=4)
+
             if i_episode % evaluate_every == 0 or i_episode == max_episodes:
                 agent.policy_net.eval()
                 print(f"alpha:{agent.alpha}")
