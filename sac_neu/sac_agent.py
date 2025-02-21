@@ -137,6 +137,8 @@ class SACAgent:
         next_state = torch.FloatTensor(np.vstack(next_state)).to(self.device)
         action = torch.FloatTensor(np.vstack(action)).to(self.device)
         reward = torch.FloatTensor(np.vstack(reward)).to(self.device)
+        reward = torch.clamp(reward, -10, 10)  
+        reward = (reward - reward.mean()) / (reward.std() + 1e-6)
         done = torch.FloatTensor(np.vstack(done)).to(self.device)
 
         target_value = self.target_value_net(next_state)
