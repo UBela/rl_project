@@ -21,13 +21,13 @@ optParser.add_option("--iter_fit", type=int, default=32)
 optParser.add_option("--log_interval", type=int, default=20)
 optParser.add_option("--random_seed", type=int, default=None)
 optParser.add_option("--render", action="store_true", default=False)
-optParser.add_option("--use_hard_opp", action="store_true", default=True)
-optParser.add_option("--use_self_play", action="store_true", default=True)
+optParser.add_option("--use_hard_opp", action="store_true", default=False)
+optParser.add_option("--use_self_play", action="store_true", default=False)
 optParser.add_option("--self_play_intervall", type=int, default=50_000)
 optParser.add_option("--self_play_start", type=int, default=16_000)
 optParser.add_option("--evaluate_every", type=int, default=2000)
-optParser.add_option("--results_folder", type=str, default="./results")
-optParser.add_option("--use_PER", default=False)
+optParser.add_option("--results_folder", type=str, default="results")
+optParser.add_option("--use_PER",action="store_true", default=False)
 optParser.add_option("--per_alpha", help="Alpha for PER", type=float, default=0.6)
 optParser.add_option("--per_beta", help="Beta for PER", type=float, default=0.4)
 optParser.add_option("--per_beta_update", help="Beta update for PER", type=float, default=None)
@@ -41,7 +41,7 @@ optParser.add_option("--gamma", type=float, default=0.99)
 optParser.add_option("--alpha", type=float, default=0.2)
 optParser.add_option("--automatic_entropy_tuning", action="store_true", default=False)
 optParser.add_option("--batch_size", type=int, default=128)
-optParser.add_option("--buffer_size", type=int, default=int(2**20))
+optParser.add_option("--buffer_size", type=int, default=8)#int(2**20))
 
 opts, _ = optParser.parse_args()
 
@@ -64,6 +64,10 @@ if __name__ == '__main__':
         state_dim=env.observation_space.shape[0], 
         action_dim=env.action_space.shape[0]//2, 
         hidden_dim=256, 
+        buffer_size=opts.buffer_size,
+        per_alpha=opts.per_alpha,
+        per_beta=opts.per_beta,
+        per_beta_update=opts.per_beta_update,
         gamma=opts.gamma, 
         tau=opts.tau,
         alpha=opts.alpha,
@@ -71,7 +75,9 @@ if __name__ == '__main__':
         policy_lr=opts.policy_lr,
         q_lr=opts.q_lr,
         value_lr=opts.value_lr,
-        device=device
+        device=device,
+        use_PER=opts.use_PER,
+        results_folder=opts.results_folder
     )
     
     print("### Agent created ###")

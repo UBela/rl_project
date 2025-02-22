@@ -29,7 +29,7 @@ class SACTrainer:
         else:
             self.replay_buffer = ReplayBuffer(config["buffer_size"])
         
-        self.log_results_filename = f"results/{self.config['results_folder']}/evaluation_log.json"
+        self.log_results_filename = f"{self.config['results_folder']}/evaluation_log.json"
         if not os.path.exists(self.log_results_filename):
             with open(self.log_results_filename, "w") as f:
                 json.dump([], f)
@@ -174,7 +174,7 @@ class SACTrainer:
 
                 reward = adjusted_reward if agent_is_player_1 else -adjusted_reward  # 🔥 Anpassung für Spieler 2
                 if i_episode % 100 == 0:
-                    print(f"[DEBUG] Episode {i_episode}, Step {t}, Raw Reward: {adjusted_reward:.3f}, Final Reward: {reward:.3f}")
+                    #print(f"[DEBUG] Episode {i_episode}, Step {t}, Raw Reward: {adjusted_reward:.3f}, Final Reward: {reward:.3f}")
                     '''if agent_is_player_1:
                         print("agent is player 1")
                     else:

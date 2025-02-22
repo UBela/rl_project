@@ -71,10 +71,10 @@ class PolicyNetwork(nn.Module):
 
 # 🚀 **SAC-Agent**
 class SACAgent:
-    def __init__(self, state_dim, action_dim, hidden_dim=256, gamma=0.99, tau=0.005, alpha=0.0,
-                 automatic_entropy_tuning=True, policy_lr=1e-4, q_lr=1e-3, value_lr=1e-3, 
-                 buffer_size=int(2**20), per_alpha=0.6, per_beta=0.4, per_beta_update=None, 
-                 use_PER=False, device="cpu", results_folder="./results"):
+    def __init__(self, state_dim, action_dim, hidden_dim, gamma, tau, alpha,
+                 automatic_entropy_tuning, policy_lr, q_lr, value_lr, 
+                 buffer_size, per_alpha, per_beta, per_beta_update, 
+                 use_PER, device, results_folder):
 
         self.state_dim = state_dim 
         self.action_dim = action_dim
@@ -145,7 +145,7 @@ class SACAgent:
                 json.dump(logs, f, indent=4)
                 f.truncate()  # Falls die Datei vorher größer war, kürzen
         except Exception as e:
-            print(f"⚠️ Fehler beim Schreiben der Log-Datei: {e}")
+            #print(f"⚠️ Fehler beim Schreiben der Log-Datei: {e}")
 
             """ Speichert Trainingsdaten als JSON in `training_log.json` """
             with open(self.training_log_filename, "r+") as f:
@@ -167,15 +167,19 @@ class SACAgent:
     # **SAC Update**
     def update(self, replay_buffer, batch_size):
         if self.use_PER:
-            print(self.use_PER)
+            #print(self.use_PER)
             batch, tree_idxs, weights = replay_buffer.sample(batch_size)
             state, action, reward, next_state, done = batch[:, 0], batch[:, 1], batch[:, 2], batch[:, 3], batch[:, 4]
         else:
             batch = replay_buffer.sample(batch_size)
             tree_idxs = None  
             weights = torch.ones(batch_size, 1).to(self.device)  
+            #print(f"DEBUG: Sampled batch size: {len(batch)}")
+
+            #for i, transition in enumerate(batch):
+                #print(f"DEBUG: Transition {i}: {transition}")
             state, action, reward, next_state, done = zip(*batch)
-       
+            print("")
         
         state = torch.FloatTensor(np.vstack(state)).to(self.device)
         next_state = torch.FloatTensor(np.vstack(next_state)).to(self.device)
