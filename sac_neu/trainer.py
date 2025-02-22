@@ -29,7 +29,8 @@ class SACTrainer:
         else:
             self.replay_buffer = ReplayBuffer(config["buffer_size"])
         
-        self.log_results_filename = f"{self.config['results_folder']}/evaluation_log.json"
+        self.log_results_filename = f"results/{self.config['results_folder']}/evaluation_log.json"
+        print(self.log_results_filename)
         if not os.path.exists(self.log_results_filename):
             with open(self.log_results_filename, "w") as f:
                 json.dump([], f)
@@ -40,7 +41,8 @@ class SACTrainer:
             eval_wins_hard = None
             eval_loses_hard = None
             
-        with open(f"{self.config['results_folder']}/results_sac_t{train_iter}_stats.pkl", "wb") as f:
+        with open(f"results/{self.config['results_folder']}/results_sac_t{train_iter}_stats.pkl", "wb") as f:
+            print(f"results/{self.config['results_folder']}/results_sac_t{train_iter}_stats.pkl")
             pickle.dump({"rewards": rewards, "lengths": lengths, "losses": losses, 
                          "wins": wins_per_episode, "loses": loses_per_episode, 
                          "eval_wins_easy": eval_wins_easy, "eval_loses_hard": eval_loses_easy,
@@ -219,7 +221,7 @@ class SACTrainer:
 
             if i_episode % 500 == 0:
                 print("########## Saving a checkpoint... ##########")
-                torch.save(agent.policy_net.state_dict(), f'{self.config["results_folder"]}/sac_{i_episode}-t{iter_fit}-s{random_seed}.pth')
+                torch.save(agent.policy_net.state_dict(), f'results/{self.config["results_folder"]}/sac_{i_episode}-t{iter_fit}-s{random_seed}.pth')
                 
             if i_episode % log_interval == 0:
                 avg_reward = np.mean(rewards[-log_interval:])
