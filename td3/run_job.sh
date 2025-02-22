@@ -1,5 +1,5 @@
 #!/bin/bash --login
-#SBATCH -J td3_10               # Job name
+#SBATCH -J none_sp_40         # Job name
 #SBATCH --ntasks=1                 # Number of tasks
 #SBATCH --cpus-per-task=1          # Number of CPU cores per task
 #SBATCH --nodes=1                  # Ensure that all cores are on the same machine with nodes=1
@@ -31,8 +31,7 @@ cd /mnt/qb/work/ludwig/lqb122/rl_project/td3
 
 # Run your code
 echo "-------- PYTHON OUTPUT ----------"
-python3 train_agent.py --results_folder ./results/both/per_best_update_5_tau_0.01 --use_PER --max_episodes 30000 --self_play_start 16000 --actor_lr 0.0003 --critic_lr 0.0003 --per_beta_update 0.0006 --per_alpha 0.3 --policy_update_freq 5 --tau 0.01
-
+python3 train_agent.py --results_folder ./results/competition/test --use_PER --max_episodes 60000 --self_play_start 30000 --actor_lr 0.0003 --critic_lr 0.0003  --per_alpha 0.3 --per_beta_update 0.0006 --policy_update_freq 5 --lr_milestones "50000"
 
 # Check if Python script ran successfully
 if [ $? -ne 0 ]; then

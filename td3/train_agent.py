@@ -34,6 +34,8 @@ optParser.add_option("--use_PER", action="store_true", default=False)
 optParser.add_option("--per_alpha", help="Alpha for PER", type=float, default=0.6)
 optParser.add_option("--per_beta", help="Beta for PER", type=float, default=0.4)
 optParser.add_option("--per_beta_update", help="Beta update for PER", type=float, default=None)
+optParser.add_option("--lr_milestones", type="string", default="", help="Milestones for LR decrease (space-separated)")
+
 # agent parameters
 optParser.add_option("--actor_lr", type=float, default=1e-4)
 optParser.add_option("--critic_lr", type=float, default=1e-3)
