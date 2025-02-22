@@ -50,7 +50,7 @@ class SACTrainer:
                          "alphas": alphas}, f)
     
     def _select_opponent(self, opponents, i_episode, win_rate):
-        '''phase1 = int(self.config["max_episodes"] * 0.3)  # Erste 30%: Nur schwache Gegner
+        phase1 = int(self.config["max_episodes"] * 0.3)  # Erste 30%: Nur schwache Gegner
         phase2 = int(self.config["max_episodes"] * 0.6)  # Bis 60%: Mischung
         phase3 = int(self.config["max_episodes"] * 0.8)  # Danach Self-Play
         
@@ -61,11 +61,11 @@ class SACTrainer:
         elif win_rate < 0.3 and i_episode < phase3:
             return opponents[1]  # Stärkerer Gegner nur wenn nötig
         else:
-            return np.random.choice(opponents)  # Volles Self-Play aktiv'''
-        if i_episode < self.config["self_play_start"]:
+            return np.random.choice(opponents)  # Volles Self-Play aktiv
+        '''if i_episode < self.config["self_play_start"]:
             return np.random.choice(opponents[:2])  # Nur weak & strong Gegner
         else:
-            return np.random.choice(opponents)
+            return np.random.choice(opponents)'''
         
     def _add_self_play_agent(self, agent, opponents, i_episode):
         if not self.config['use_self_play']:
