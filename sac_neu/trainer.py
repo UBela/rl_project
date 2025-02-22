@@ -7,7 +7,8 @@ import torch
 import time
 import numpy as np
 import pickle
-from utils.replay_buffer import ReplayBuffer, PriorityReplayBuffer
+from utils.replay_buffer import PriorityReplayBuffer
+from replay_buffer import ReplayBuffer
 from td3.utils import *
 from evaluate import evaluate
 from hockey import hockey_env as h_env
@@ -34,7 +35,7 @@ class SACTrainer:
                 json.dump([], f)
 
                 
-    def _save_statistics(self, rewards, lengths, losses, wins_per_episode, loses_per_episode, train_iter, eval_wins_easy, eval_loses_easy, eval_wins_hard, eval_loses_hard):
+    def _save_statistics(self, rewards, lengths, losses, wins_per_episode, loses_per_episode, train_iter, eval_wins_easy, eval_loses_easy, eval_wins_hard, eval_loses_hard, alphas):
         if not self.config['use_hard_opp']:
             eval_wins_hard = None
             eval_loses_hard = None
@@ -43,7 +44,8 @@ class SACTrainer:
             pickle.dump({"rewards": rewards, "lengths": lengths, "losses": losses, 
                          "wins": wins_per_episode, "loses": loses_per_episode, 
                          "eval_wins_easy": eval_wins_easy, "eval_loses_hard": eval_loses_easy,
-                         "eval_wins_hard": eval_wins_hard, "eval_loses_hard": eval_loses_hard}, f)
+                         "eval_wins_hard": eval_wins_hard, "eval_loses_hard": eval_loses_hard,
+                         "alphas": alphas}, f)
     
     def _select_opponent(self, opponents, i_episode, win_rate):
         phase1 = int(self.config["max_episodes"] * 0.3)  # Erste 30%: Nur schwache Gegner
@@ -104,6 +106,7 @@ class SACTrainer:
       
         rewards = []
         lengths = []
+        alphas = []
         wins_per_episode = {}
         loses_per_episode = {}
         losses = []
@@ -117,9 +120,11 @@ class SACTrainer:
             torch.manual_seed(random_seed)
             env.seed(random_seed)
         
-        if self.config['use_PER']:
-            print("Filling replay buffer...")
-            self.fill_replay_buffer(agent, env)
+        
+        print("Filling replay buffer...")
+        self.fill_replay_buffer(agent, env)
+        print(f"Replay buffer filled with {len(self.replay_buffer)} samples")
+
             
            
         for i_episode in range(1, max_episodes + 1):
@@ -160,11 +165,18 @@ class SACTrainer:
                 
                 adjusted_reward = (
                     2.0 * reward_closeness_to_puck +  
-                    1.5 * reward_touch_puck +         
+                    2.5 * reward_touch_puck +         
                     1.0 * reward_puck_direction       # Kontrollierte Puck-Richtung
                 )
 
                 reward = adjusted_reward if agent_is_player_1 else -adjusted_reward  # 🔥 Anpassung für Spieler 2
+                if i_episode % 100 == 0:
+                    print(f"[DEBUG] Episode {i_episode}, Step {t}, Raw Reward: {adjusted_reward:.3f}, Final Reward: {reward:.3f}")
+                    if agent_is_player_1:
+                        print("agent is player 1")
+                    else:
+                        print("agent is player 2")
+
 
                 if agent_is_player_1:
                     agent.replay_buffer.add_transition([ob, a1, reward, ob_new, done])
@@ -197,7 +209,7 @@ class SACTrainer:
                 losses.extend(losses_list)
             rewards.append(total_reward)
             lengths.append(t)
-            
+            alphas.append(agent.alpha)
             self.total_gradient_steps += iter_fit
                 
             self._add_self_play_agent(agent, opponents, i_episode)
@@ -247,6 +259,6 @@ class SACTrainer:
 
                 self._save_statistics(rewards, lengths, losses, wins_per_episode, loses_per_episode, iter_fit, 
                                       wins_per_episode_eval_easy, loses_per_episode_eval_easy, 
-                                      wins_per_episode_eval_hard, loses_per_episode_eval_hard)
+                                      wins_per_episode_eval_hard, loses_per_episode_eval_hard, alphas)
 
             agent.policy_net.train()

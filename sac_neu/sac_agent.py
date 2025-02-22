@@ -9,7 +9,8 @@ import torch.optim as optim
 import numpy as np
 from utils import *
 from torch.distributions import Normal
-from utils.replay_buffer import ReplayBuffer, PriorityReplayBuffer
+from utils.replay_buffer import PriorityReplayBuffer
+from replay_buffer import ReplayBuffer
 import json
 os.makedirs("logs", exist_ok=True)
 log_file = open("logs/training_log.txt", "a")
@@ -73,7 +74,7 @@ class SACAgent:
     def __init__(self, state_dim, action_dim, hidden_dim=256, gamma=0.99, tau=0.005, alpha=0.0,
                  automatic_entropy_tuning=True, policy_lr=1e-4, q_lr=1e-3, value_lr=1e-3, 
                  buffer_size=int(2**20), per_alpha=0.6, per_beta=0.4, per_beta_update=None, 
-                 use_PER=True, device="cpu", results_folder="./results"):
+                 use_PER=False, device="cpu", results_folder="./results"):
 
         self.gamma = gamma
         self.tau = tau
@@ -160,12 +161,15 @@ class SACAgent:
     # **SAC Update**
     def update(self, replay_buffer, batch_size):
         if self.use_PER:
+            print(self.use_PER)
             batch, tree_idxs, weights = replay_buffer.sample(batch_size)
+            state, action, reward, next_state, done = batch[:, 0], batch[:, 1], batch[:, 2], batch[:, 3], batch[:, 4]
         else:
             batch = replay_buffer.sample(batch_size)
+            tree_idxs = None  
             weights = torch.ones(batch_size, 1).to(self.device)  
-
-        state, action, reward, next_state, done = batch[:, 0], batch[:, 1], batch[:, 2], batch[:, 3], batch[:, 4]
+            state, action, reward, next_state, done = map(np.array, zip(*batch))
+       
         
         state = torch.FloatTensor(np.vstack(state)).to(self.device)
         next_state = torch.FloatTensor(np.vstack(next_state)).to(self.device)
