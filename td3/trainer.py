@@ -151,6 +151,7 @@ class TD3Trainer:
                     obs_agent2 = env.obs_agent_two()
 
                 self.total_steps += 1
+                
 
                 if done or trunc:
                     winner = _info.get('winner', None)
@@ -161,11 +162,15 @@ class TD3Trainer:
                         wins_per_episode[i_episode] = 1 if winner == -1 else 0
                         loses_per_episode[i_episode] = 1 if winner == 1 else 0
                     break
-            
+                
             losses.extend(agent.train(iter_fit=iter_fit))
             rewards.append(total_reward)
             lengths.append(t)
             
+            # scheduler step after each episode
+            if self.config['lr_milestones']:
+                agent.schedulers_step()
+                
             self.total_gradient_steps += iter_fit
                 
             self._add_self_play_agent(agent, opponents, i_episode)

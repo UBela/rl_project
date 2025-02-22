@@ -48,7 +48,7 @@ class HockeyAgent(Agent):
     
 def initialize_agent(agent_args: list[str]) -> Agent:
     # Use argparse to parse the arguments given in `agent_args`.
-    state_dict_path="./results/both/per_best_update_every_5/td3_30000-t32-sNone.pth"
+    state_dict_path="td3/results/competition/update_every_5_tau_0.005_lr_50_sp_30/td3_60000-t32-sNone.pth"
     # Initialize the agent based on the arguments.
     agent = HockeyAgent(state=torch.load(state_dict_path))
 

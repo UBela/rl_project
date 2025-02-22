@@ -3,8 +3,9 @@ import numpy as np
 from td3.networks import Critic_Net, Actor_Net
 from utils.replay_buffer import ReplayBuffer, PriorityReplayBuffer
 import torch.nn.functional as F
+from torch.optim.lr_scheduler import MultiStepLR
 
-        
+# This implementation is based on the DDPG implementation of the lecture and was adapted to the TD3 algorithm
 class TD3Agent(object):
     def __init__(self, observation_space, action_space, device, userconfig):
         self.device = device
@@ -28,6 +29,7 @@ class TD3Agent(object):
             "per_alpha": 0.3,
             "per_beta": 0.4,
             "per_beta_update": 0.0006
+            
             
         }
         if userconfig:
@@ -76,6 +78,12 @@ class TD3Agent(object):
         self.total_steps = 0
         self.in_training = True
         
+        if self._config["lr_milestones"]:
+            lr_milestones = self._config["lr_milestones"].split(" ")
+            lr_milestones = [int(i) for i in lr_milestones]           
+            self.actor_scheduler = MultiStepLR(self.actor_net.optimizer, milestones=lr_milestones, gamma=0.5)
+            self.critic_scheduler = MultiStepLR(self.critic_net.optimizer, milestones=lr_milestones, gamma=0.5)
+        
 
     def _copy_nets(self):
         self.critic_net_target.load_state_dict(self.critic_net.state_dict())
@@ -114,6 +122,11 @@ class TD3Agent(object):
     
     def update_per_beta(self, update_per_beta):
         self.replay_buffer.update_beta(update_per_beta)
+    
+    def schedulers_step(self):
+        if self.actor_scheduler and self.critic_scheduler:
+            self.actor_scheduler.step()
+            self.critic_scheduler.step()
         
     def state(self):
         return self.critic_net.state_dict(), self.actor_net.state_dict()
