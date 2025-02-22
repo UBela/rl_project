@@ -94,7 +94,9 @@ class SACAgent:
         # 🏆 **Replay Buffer wählen (Prioritized oder normal)**
         if use_PER:
             self.replay_buffer = PriorityReplayBuffer(buffer_size, alpha=per_alpha, beta=per_beta)
+            print("PER True")
         else:
+            print("PER False")
             self.replay_buffer = ReplayBuffer(buffer_size)
 
         # 🏗️ **Netzwerke erstellen**
