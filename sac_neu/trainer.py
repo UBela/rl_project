@@ -29,7 +29,7 @@ class SACTrainer:
         else:
             self.replay_buffer = ReplayBuffer(config["buffer_size"])
         
-        self.log_results_filename = f"{self.config['results_folder']}/evaluation_log.json"
+        self.log_results_filename = f"results/{self.config['results_folder']}/evaluation_log.json"
         if not os.path.exists(self.log_results_filename):
             with open(self.log_results_filename, "w") as f:
                 json.dump([], f)
