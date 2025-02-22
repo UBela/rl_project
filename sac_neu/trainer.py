@@ -48,7 +48,7 @@ class SACTrainer:
                          "alphas": alphas}, f)
     
     def _select_opponent(self, opponents, i_episode, win_rate):
-        phase1 = int(self.config["max_episodes"] * 0.3)  # Erste 30%: Nur schwache Gegner
+        '''phase1 = int(self.config["max_episodes"] * 0.3)  # Erste 30%: Nur schwache Gegner
         phase2 = int(self.config["max_episodes"] * 0.6)  # Bis 60%: Mischung
         phase3 = int(self.config["max_episodes"] * 0.8)  # Danach Self-Play
         
@@ -59,8 +59,11 @@ class SACTrainer:
         elif win_rate < 0.3 and i_episode < phase3:
             return opponents[1]  # Stärkerer Gegner nur wenn nötig
         else:
-            return np.random.choice(opponents)  # Volles Self-Play aktiv
-
+            return np.random.choice(opponents)  # Volles Self-Play aktiv'''
+        if i_episode < self.config["self_play_start"]:
+            return np.random.choice(opponents[:2])  # Nur weak & strong Gegner
+        else:
+            return np.random.choice(opponents)
         
     def _add_self_play_agent(self, agent, opponents, i_episode):
         if not self.config['use_self_play']:
@@ -82,8 +85,8 @@ class SACTrainer:
             trunc = False
 
             while not (done or trunc):
-                a1 = np.random.uniform(-1, 1, env.action_space.shape[0])  # Zufällige Aktionen
-                a2 = opponent.act(obs_agent2)  # Gegner-Aktion
+                a1 = np.random.uniform(-1, 1, env.action_space.shape[0]// 2)  
+                a2 = opponent.act(obs_agent2)  
                 actions = np.hstack([a1, a2])
                 (ob_new, reward, done, trunc, _info) = env.step(actions)
 
@@ -172,10 +175,10 @@ class SACTrainer:
                 reward = adjusted_reward if agent_is_player_1 else -adjusted_reward  # 🔥 Anpassung für Spieler 2
                 if i_episode % 100 == 0:
                     print(f"[DEBUG] Episode {i_episode}, Step {t}, Raw Reward: {adjusted_reward:.3f}, Final Reward: {reward:.3f}")
-                    if agent_is_player_1:
+                    '''if agent_is_player_1:
                         print("agent is player 1")
                     else:
-                        print("agent is player 2")
+                        print("agent is player 2")'''
 
 
                 if agent_is_player_1:

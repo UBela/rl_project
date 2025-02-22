@@ -76,6 +76,8 @@ class SACAgent:
                  buffer_size=int(2**20), per_alpha=0.6, per_beta=0.4, per_beta_update=None, 
                  use_PER=False, device="cpu", results_folder="./results"):
 
+        self.state_dim = state_dim 
+        self.action_dim = action_dim
         self.gamma = gamma
         self.tau = tau
         self.alpha = alpha
@@ -156,6 +158,8 @@ class SACAgent:
         state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
         with torch.no_grad():
             action, _ = self.policy_net.sample(state)
+        action = action.flatten()[:4]
+        #print(action.shape)
         return action.cpu().numpy().flatten()
     def act(self, state):
         return self.select_action(state)
@@ -170,7 +174,7 @@ class SACAgent:
             batch = replay_buffer.sample(batch_size)
             tree_idxs = None  
             weights = torch.ones(batch_size, 1).to(self.device)  
-            state, action, reward, next_state, done = map(np.array, zip(*batch))
+            state, action, reward, next_state, done = zip(*batch)
        
         
         state = torch.FloatTensor(np.vstack(state)).to(self.device)

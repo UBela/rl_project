@@ -62,7 +62,7 @@ if __name__ == '__main__':
     
     agent = SACAgent(
         state_dim=env.observation_space.shape[0], 
-        action_dim=env.action_space.shape[0], 
+        action_dim=env.action_space.shape[0]//2, 
         hidden_dim=256, 
         gamma=opts.gamma, 
         tau=opts.tau,
