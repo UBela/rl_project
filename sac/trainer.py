@@ -74,14 +74,25 @@ class SACTrainer:
                     opponent = self._select_opponent([h_env.BasicOpponent(weak=True), h_env.BasicOpponent(weak=False)], i_episode=0, win_rate=0.0)
                     done, trunc = False, False
 
+                    # 🔄 Zufällig wählen, ob der Agent Player 1 oder Player 2 ist
+                    agent_is_player_1 = np.random.choice([True, False])
+
                     while not (done or trunc):
-                        a1 = np.random.uniform(-1, 1, env.action_space.shape[0] // 2)
-                        a2 = opponent.act(obs_agent2)
+                        if agent_is_player_1:
+                            a1 = np.random.uniform(-1, 1, env.action_space.shape[0] // 2)
+                            a2 = opponent.act(obs_agent2)
+                        else:
+                            a1 = opponent.act(obs_agent2)
+                            a2 = np.random.uniform(-1, 1, env.action_space.shape[0] // 2)
+
                         actions = np.hstack([a1, a2])
                         (ob_new, reward, done, trunc, _info) = env.step(actions)
 
+                        # 🔄 Falls der Agent `Player 2` ist, den Reward umkehren!
+                        if not agent_is_player_1:
+                            reward = -reward  
+
                         self.replay_buffer.add_transition([ob, a1, reward, ob_new, done])
-                        pbar.update(1)
                         ob = ob_new
                         obs_agent2 = env.obs_agent_two()
 
@@ -111,14 +122,20 @@ class SACTrainer:
 
             opponent = self._select_opponent(opponents, episode_counter, 0.0)  # Winrate wird später aktualisiert
             first_time_touch = 1
-
+            agent_is_player_1 = np.random.choice([True, False])
             for step in range(self._config['max_timesteps']):
-                a1 = agent.select_action(ob)
-                a2 = opponent.act(obs_agent2)
+                if agent_is_player_1:
+                    a1 = agent.select_action(ob)
+                    a2 = opponent.act(obs_agent2)
+                else:
+                    a1 = opponent.act(obs_agent2)
+                    a2 = agent.select_action(ob)
                 actions = np.hstack([a1, a2])
                 next_state, reward, done, truncated, _info = env.step(actions)
 
-                puck_touch = _info.get('reward_touch_puck', 0.0)
+                if not agent_is_player_1:
+                    reward = -reward
+                '''puck_touch = _info.get('reward_touch_puck', 0.0)
                 puck_closeness = _info.get('reward_closeness_to_puck', 0.0)
                 puck_direction = _info.get('reward_puck_direction', 0.0)
 
@@ -131,9 +148,9 @@ class SACTrainer:
                 )
 
                 
-                total_reward += step_reward 
+                total_reward += step_reward '''
 
-                agent.replay_buffer.add_transition((ob, a1, step_reward, next_state, done))
+                agent.replay_buffer.add_transition((ob, a1, reward, next_state, done))
 
                 ob = next_state
                 obs_agent2 = env.obs_agent_two()
