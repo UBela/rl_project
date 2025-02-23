@@ -132,21 +132,46 @@ class SACTrainer:
 
                 if done or truncated:
                     break
-
-            # Training des SAC-Agenten
+            training_metrics = {
+                "td_error_mean": 0.0,
+                "td_error_std": 0.0,
+                "q1_loss": 0.0,
+                "q2_loss": 0.0,
+                "policy_loss": 0.0,
+                "log_prob_mean": 0.0,
+                "log_prob_std": 0.0,
+                "alpha": agent.alpha if agent.automatic_entropy_tuning else 0.0,
+            }
+            q1_loss, q2_loss, policy_loss, alpha_loss = 0.0, 0.0, 0.0, 0.0  
             if len(agent.replay_buffer) >= self._config['batch_size']:
                 for _ in range(self._config['grad_steps']):
-                    q1_loss, q2_loss, policy_loss, alpha_loss = agent.update(agent.replay_buffer, self._config['batch_size'])
+                    losses = agent.update(agent.replay_buffer, self._config['batch_size'])
 
-                grad_updates += 1
-                q1_losses.append(q1_loss)
-                q2_losses.append(q2_loss)
-                actor_losses.append(policy_loss)
-                alpha_losses.append(alpha_loss)
+                    q1_loss, q2_loss, policy_loss, alpha_loss = (
+                        losses["q1_loss"],
+                        losses["q2_loss"],
+                        losses["policy_loss"],
+                        losses["alpha_loss"],
+                    )
+            grad_updates += 1
+            q1_losses.append(q1_loss)
+            q2_losses.append(q2_loss)
+            actor_losses.append(policy_loss)
+            alpha_losses.append(alpha_loss)
+
+            # Update `training_metrics` mit den neuen Werten
+            training_metrics["td_error_mean"] = np.mean(q1_losses[-100:]) if len(q1_losses) > 0 else 0
+            training_metrics["td_error_std"] = np.std(q1_losses[-100:]) if len(q1_losses) > 0 else 0
+            training_metrics["q1_loss"] = q1_losses[-1] if len(q1_losses) > 0 else 0
+            training_metrics["q2_loss"] = q2_losses[-1] if len(q2_losses) > 0 else 0
+            training_metrics["policy_loss"] = actor_losses[-1] if len(actor_losses) > 0 else 0
+            training_metrics["log_prob_mean"] = np.mean(alpha_losses[-100:]) if len(alpha_losses) > 0 else 0
+            training_metrics["log_prob_std"] = np.std(alpha_losses[-100:]) if len(alpha_losses) > 0 else 0
+            training_metrics["alpha"] = agent.alpha if agent.automatic_entropy_tuning else 0.0
 
             # Lernraten-Update
             agent.schedulers_step()
-            training_metrics = {
+            '''training_metrics = {
                 "td_error_mean": np.mean(q1_losses[-100:]) if len(q1_losses) > 0 else 0,
                 "td_error_std": np.std(q1_losses[-100:]) if len(q1_losses) > 0 else 0,
                 "q1_loss": q1_losses[-1] if len(q1_losses) > 0 else 0,
@@ -155,7 +180,7 @@ class SACTrainer:
                 "log_prob_mean": np.mean(alpha_losses[-100:]) if len(alpha_losses) > 0 else 0,
                 "log_prob_std": np.std(alpha_losses[-100:]) if len(alpha_losses) > 0 else 0,
                 "alpha": agent.alpha if agent.automatic_entropy_tuning else 0.0,
-            }
+            }'''
 
             self.logger.print_episode_info(episode_counter, step, total_reward, env.winner, training_metrics)
 

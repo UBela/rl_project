@@ -93,6 +93,7 @@ class SACAgent:
         self.results_folder = results_folder
         self.alpha_lr = alpha_lr
         self.alpha_milestones = alpha_milestones
+        self.per_beta_update = per_beta_update
 
         os.makedirs(self.results_folder, exist_ok=True)
 
@@ -232,6 +233,11 @@ class SACAgent:
                 td_errors = torch.abs(self.q_net1(states, actions) - target_q).detach().cpu().numpy()
             #print(f"[DEBUG] Updating priorities for indices: {tree_idxs[:10]}")
             replay_buffer.update_priorities(tree_idxs, td_errors)
+
+            avg_priority = np.mean(td_errors)
+            priority_min = np.min(td_errors)
+            priority_max = np.max(td_errors)
+
         # **Entropie-Update**
         if self.automatic_entropy_tuning:
             alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy).detach()).mean()
@@ -246,4 +252,17 @@ class SACAgent:
         # **Target-Netzwerk Update**
         self.update_target_network()
 
-        return q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item()
+        return {
+            "q1_loss": q1_loss.item(),
+            "q2_loss": q2_loss.item(),
+            "policy_loss": policy_loss.item(),
+            "alpha_loss": alpha_loss.item(),
+            "alpha": self.alpha,
+            "td_error_mean": np.mean(td_errors) if self.use_PER else None,
+            "td_error_std": np.std(td_errors) if self.use_PER else None,
+            "avg_priority": avg_priority if self.use_PER else None,
+            "priority_min": priority_min if self.use_PER else None,
+            "priority_max": priority_max if self.use_PER else None,
+            "priority_mean": np.mean(td_errors) if self.use_PER else None,
+            "per_beta": self.per_beta_update if self.per_beta_update else None
+        }

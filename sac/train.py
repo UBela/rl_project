@@ -115,7 +115,7 @@ class SimpleLogger:
             f.truncate()
 
     def log_training(self, episode, training_metrics):
-        """Speichert Trainingsparameter (SAC-Losses, Alpha)"""
+        """Speichert Trainingsparameter (SAC-Losses, Alpha, PER-Parameter)"""
         with open(self.training_log_file, "r+") as f:
             logs = json.load(f)
             log_entry = {"episode": episode}
@@ -173,6 +173,22 @@ class SimpleLogger:
         plt.savefig(plot_path)
         plt.close()
         print(f"[INFO] Reward-Verlauf gespeichert: {plot_path}")
+    def print_stats(self, rewards, touch_stats, won_stats, lost_stats):
+        """ Druckt zusammenfassende Statistiken nach dem Training """
+
+        avg_reward = np.mean(rewards) if rewards else 0
+        win_rate = sum(won_stats.values()) / len(won_stats) if won_stats else 0
+        loss_rate = sum(lost_stats.values()) / len(lost_stats) if lost_stats else 0
+        draw_rate = 1 - win_rate - loss_rate  # Unentschieden
+
+        print(f"\n=== Training abgeschlossen ===")
+        print(f"📉 Durchschnittliche Belohnung: {avg_reward:.2f}")
+        print(f"✅ Winrate: {win_rate:.2%} | ❌ Lossrate: {loss_rate:.2%} | ⚖ Unentschieden: {draw_rate:.2%}")
+
+        self.log(f"=== Training Stats ===")
+        self.log(f"📉 Durchschnittliche Belohnung: {avg_reward:.2f}")
+        self.log(f"✅ Winrate: {win_rate:.2%} | ❌ Lossrate: {loss_rate:.2%} | ⚖ Unentschieden: {draw_rate:.2%}")
+
 
 
 if __name__ == "__main__":
