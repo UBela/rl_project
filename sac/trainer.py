@@ -92,17 +92,22 @@ class SACTrainer:
         Haupttrainingsloop für den SAC-Agenten.
         """
         rew_stats, q1_losses, q2_losses, actor_losses, alpha_losses = [], [], [], [], []
+        lost_stats, touch_stats, won_stats = {}, {}, {}
         eval_stats = {"weak": {"reward": [], "touch": [], "won": [], "lost": []},
                       "strong": {"reward": [], "touch": [], "won": [], "lost": []}}
         episode_counter, total_step_counter, grad_updates = 1, 0, 0
 
-        # Fülle den Replay Buffer zu Beginn
+        
         self.fill_replay_buffer(agent, env)
 
         while episode_counter <= self._config['max_episodes']:
             ob, _ = env.reset()
             obs_agent2 = env.obs_agent_two()
-            total_reward, touched = 0, 0
+            total_reward = 0
+            touched = 0
+            touch_stats[episode_counter] = 0
+            won_stats[episode_counter] = 0
+            lost_stats[episode_counter] = 0
 
             opponent = self._select_opponent(opponents, episode_counter, 0.0)  # Winrate wird später aktualisiert
             first_time_touch = 1
@@ -113,16 +118,20 @@ class SACTrainer:
                 actions = np.hstack([a1, a2])
                 next_state, reward, done, truncated, _info = env.step(actions)
 
-                touched = max(touched, _info.get('reward_touch_puck', 0.0))
+                puck_touch = _info.get('reward_touch_puck', 0.0)
+                puck_closeness = _info.get('reward_closeness_to_puck', 0.0)
+                puck_direction = _info.get('reward_puck_direction', 0.0)
 
                 step_reward = (
-                    reward
-                    + 5 * _info.get('reward_closeness_to_puck', 0.0)
-                    - (1 - touched) * 0.1
-                    + touched * first_time_touch * 0.1 * step
+                    reward  
+                    + 3.0 * puck_closeness 
+                    + 2.0 * puck_touch 
+                    + 4.0 * puck_direction  
+                    - 0.1 * (1 - puck_touch)  
                 )
-                first_time_touch = 1 - touched
-                total_reward += step_reward
+
+                
+                total_reward += step_reward 
 
                 agent.replay_buffer.add_transition((ob, a1, step_reward, next_state, done))
 
@@ -141,7 +150,17 @@ class SACTrainer:
                 "log_prob_mean": 0.0,
                 "log_prob_std": 0.0,
                 "alpha": agent.alpha if agent.automatic_entropy_tuning else 0.0,
+                "alpha_loss": 0.0,
+                "avg_priority": 0.0,
+                "priority_min": 0.0,
+                "priority_max": 0.0,
+                "priority_mean": 0.0,
+                "per_beta": 0.0
+
             }
+            # Konvertiere alle Werte zu float, ersetze None mit 0.0
+            training_metrics = {k: float(v) if v is not None else 0.0 for k, v in training_metrics.items()}
+
             q1_loss, q2_loss, policy_loss, alpha_loss = 0.0, 0.0, 0.0, 0.0  
             if len(agent.replay_buffer) >= self._config['batch_size']:
                 for _ in range(self._config['grad_steps']):
@@ -153,6 +172,14 @@ class SACTrainer:
                         losses["policy_loss"],
                         losses["alpha_loss"],
                     )
+                if agent.use_PER:
+                    training_metrics["td_error_mean"] = losses.get("td_error_mean", 0.0)
+                    training_metrics["td_error_std"] = losses.get("td_error_std", 0.0)
+                    training_metrics["avg_priority"] = losses.get("avg_priority", 0.0)
+                    training_metrics["priority_min"] = losses.get("priority_min", 0.0)
+                    training_metrics["priority_max"] = losses.get("priority_max", 0.0)
+                    training_metrics["priority_mean"] = losses.get("priority_mean", 0.0)
+                    training_metrics["per_beta"] = losses.get("per_beta", 0.0)
             grad_updates += 1
             q1_losses.append(q1_loss)
             q2_losses.append(q2_loss)
@@ -160,8 +187,6 @@ class SACTrainer:
             alpha_losses.append(alpha_loss)
 
             # Update `training_metrics` mit den neuen Werten
-            training_metrics["td_error_mean"] = np.mean(q1_losses[-100:]) if len(q1_losses) > 0 else 0
-            training_metrics["td_error_std"] = np.std(q1_losses[-100:]) if len(q1_losses) > 0 else 0
             training_metrics["q1_loss"] = q1_losses[-1] if len(q1_losses) > 0 else 0
             training_metrics["q2_loss"] = q2_losses[-1] if len(q2_losses) > 0 else 0
             training_metrics["policy_loss"] = actor_losses[-1] if len(actor_losses) > 0 else 0
@@ -171,20 +196,13 @@ class SACTrainer:
 
             # Lernraten-Update
             agent.schedulers_step()
-            '''training_metrics = {
-                "td_error_mean": np.mean(q1_losses[-100:]) if len(q1_losses) > 0 else 0,
-                "td_error_std": np.std(q1_losses[-100:]) if len(q1_losses) > 0 else 0,
-                "q1_loss": q1_losses[-1] if len(q1_losses) > 0 else 0,
-                "q2_loss": q2_losses[-1] if len(q2_losses) > 0 else 0,
-                "policy_loss": actor_losses[-1] if len(actor_losses) > 0 else 0,
-                "log_prob_mean": np.mean(alpha_losses[-100:]) if len(alpha_losses) > 0 else 0,
-                "log_prob_std": np.std(alpha_losses[-100:]) if len(alpha_losses) > 0 else 0,
-                "alpha": agent.alpha if agent.automatic_entropy_tuning else 0.0,
-            }'''
+      
+            # Konvertiere `training_metrics` Werte in native Python-Datentypen
+            training_metrics = {k: float(v) for k, v in training_metrics.items()}
 
+            # Dann loggen
             self.logger.print_episode_info(episode_counter, step, total_reward, env.winner, training_metrics)
 
-            
             avg_reward = np.mean(rew_stats[-100:])  # Durchschnittlicher Reward der letzten 100 Episoden
             print(f"Episode {episode_counter}: Reward={total_reward:.3f}, Avg. Reward (100 Episoden)={avg_reward:.3f}")
 

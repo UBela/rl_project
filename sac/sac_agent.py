@@ -237,6 +237,8 @@ class SACAgent:
             avg_priority = np.mean(td_errors)
             priority_min = np.min(td_errors)
             priority_max = np.max(td_errors)
+        else:
+            avg_priority, priority_min, priority_max = None, None, None
 
         # **Entropie-Update**
         if self.automatic_entropy_tuning:
@@ -258,11 +260,11 @@ class SACAgent:
             "policy_loss": policy_loss.item(),
             "alpha_loss": alpha_loss.item(),
             "alpha": self.alpha,
-            "td_error_mean": np.mean(td_errors) if self.use_PER else None,
-            "td_error_std": np.std(td_errors) if self.use_PER else None,
-            "avg_priority": avg_priority if self.use_PER else None,
-            "priority_min": priority_min if self.use_PER else None,
-            "priority_max": priority_max if self.use_PER else None,
-            "priority_mean": np.mean(td_errors) if self.use_PER else None,
-            "per_beta": self.per_beta_update if self.per_beta_update else None
+            "td_error_mean": np.mean(td_errors) if self.use_PER else 0.0,
+            "td_error_std": np.std(td_errors) if self.use_PER else 0.0,
+            "avg_priority": avg_priority if self.use_PER else 0.0,
+            "priority_min": priority_min if self.use_PER else 0.0,
+            "priority_max": priority_max if self.use_PER else 0.0,
+            "priority_mean": np.mean(td_errors) if self.use_PER else 0.0,
+            "per_beta": self.per_beta_update if self.per_beta_update else 0.0
         }
