@@ -146,18 +146,20 @@ class SACTrainer:
 
             # Lernraten-Update
             agent.schedulers_step()
-            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
-            log_data = {
-                "Episode": episode_counter,
-                "Total_Reward": total_reward,
-                "Avg_Reward_100": np.mean(rew_stats[-100:]) if len(rew_stats) >= 100 else np.mean(rew_stats),
-                "Q1_Loss": np.mean(q1_losses[-10:]),  # Mittelwert der letzten 10 Updates für Glättung
-                "Q2_Loss": np.mean(q2_losses[-10:]),
-                "Policy_Loss": np.mean(actor_losses[-10:]),
-                "Alpha_Loss": np.mean(alpha_losses[-10:]) if agent.automatic_entropy_tuning else None,
-                "Alpha": agent.alpha if agent.automatic_entropy_tuning else None
+            training_metrics = {
+                "td_error_mean": np.mean(q1_losses[-100:]) if len(q1_losses) > 0 else 0,
+                "td_error_std": np.std(q1_losses[-100:]) if len(q1_losses) > 0 else 0,
+                "q1_loss": q1_losses[-1] if len(q1_losses) > 0 else 0,
+                "q2_loss": q2_losses[-1] if len(q2_losses) > 0 else 0,
+                "policy_loss": actor_losses[-1] if len(actor_losses) > 0 else 0,
+                "log_prob_mean": np.mean(alpha_losses[-100:]) if len(alpha_losses) > 0 else 0,
+                "log_prob_std": np.std(alpha_losses[-100:]) if len(alpha_losses) > 0 else 0,
+                "alpha": agent.alpha if agent.automatic_entropy_tuning else 0.0,
             }
-            self.logger.log_json(log_data)
+
+            self.logger.print_episode_info(episode_counter, step, total_reward, env.winner, training_metrics)
+
+            
             avg_reward = np.mean(rew_stats[-100:])  # Durchschnittlicher Reward der letzten 100 Episoden
             print(f"Episode {episode_counter}: Reward={total_reward:.3f}, Avg. Reward (100 Episoden)={avg_reward:.3f}")
 

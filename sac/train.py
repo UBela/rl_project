@@ -86,64 +86,75 @@ import json
 class SimpleLogger:
     def __init__(self, log_dir):
         os.makedirs(log_dir, exist_ok=True)
-        self.log_file = os.path.join(log_dir, "training_log.json")
+        self.episode_log_file = os.path.join(log_dir, "episode_log.json")  
+        self.training_log_file = os.path.join(log_dir, "training_log.json")  
         self.plot_dir = log_dir
-        self.csv = os.path.join(log_dir, "training_log.csv")
 
-        if not os.path.exists(self.log_file):
-            with open(self.log_file, "w") as f:
-                json.dump([], f)
+        # Falls die JSONs nicht existieren, leere Listen schreiben
+        for file in [self.episode_log_file, self.training_log_file]:
+            if not os.path.exists(file):
+                with open(file, "w") as f:
+                    json.dump([], f, indent=4)
+
     def log(self, message):
+        """Loggt Nachrichten zur Konsole"""
         print(message)
-        with open(self.csv, "a") as f:
-            f.write(message + "\n")
 
-    def log_json(self, log_data):
-        """ Speichert Logs als JSON """
-        print(log_data)  # Ausgabe für Debugging
-        with open(self.log_file, "a") as f:
-            f.write(json.dumps(log_data) + "\n")
+    def log_episode(self, episode, steps, reward, winner):
+        """Speichert Episoden-Infos (Reward, Winner)"""
+        with open(self.episode_log_file, "r+") as f:
+            logs = json.load(f)
+            logs.append({
+                "episode": episode,
+                "steps": steps,
+                "reward": reward,
+                "winner": winner
+            })
+            f.seek(0)
+            json.dump(logs, f, indent=4)
+            f.truncate()
+
+    def log_training(self, episode, training_metrics):
+        """Speichert Trainingsparameter (SAC-Losses, Alpha)"""
+        with open(self.training_log_file, "r+") as f:
+            logs = json.load(f)
+            log_entry = {"episode": episode}
+            log_entry.update(training_metrics)
+
+            logs.append(log_entry)
+            f.seek(0)
+            json.dump(logs, f, indent=4)
+            f.truncate()
 
     def save_model(self, agent, filename_base):
-        """
-        Speichert das Modell in zwei Formaten:
-        - `.pkl`: Enthält den gesamten Agenten (inkl. Replay Buffer, falls vorhanden)
-        - `.pth`: Enthält nur die Gewichte des Policy-Netzwerks für einfaches Laden
-        """
+        """Speichert das Modell als .pkl und .pth"""
         model_dir = "saved_models"
         os.makedirs(model_dir, exist_ok=True)
 
-        # 🔹 Speichert den kompletten Agenten als `.pkl`
         pkl_path = os.path.join(model_dir, f"{filename_base}.pkl")
         torch.save(agent, pkl_path)
 
-        # 🔹 Speichert nur das Policy-Netzwerk als `.pth`
         pth_path = os.path.join(model_dir, f"{filename_base}.pth")
         torch.save(agent.policy_net.state_dict(), pth_path)
 
-        self.log(f"Modell saved: {pkl_path} & {pth_path}")
+        self.log(f"✅ Modell gespeichert: {pkl_path} & {pth_path}")
 
-    def print_episode_info(self, winner, episode, step, reward):
-        """ Loggt die Episoden-Infos während des Trainings. """
-        log_str = f"Episode {episode} | Steps: {step} | Reward: {reward:.3f} | Winner: {winner}"
+    def print_episode_info(self, episode, steps, reward, winner, training_metrics=None):
+        """Druckt & speichert Episoden-Infos"""
+        log_str = (
+            f"Episode {episode} | Steps: {steps} | Reward: {reward:.3f} | Winner: {winner}"
+        )
+        if training_metrics:
+            log_str += f" | Alpha: {training_metrics.get('alpha', 'N/A'):.4f} | Q1_Loss: {training_metrics.get('q1_loss', 'N/A'):.4f}"
+        
         self.log(log_str)
-    def print_stats(self, rewards, touch_stats, won_stats, lost_stats):
-        """ Druckt zusammenfassende Statistiken nach dem Training """
-        avg_reward = np.mean(rewards) if rewards else 0
-        win_rate = sum(won_stats.values()) / len(won_stats) if won_stats else 0
-        loss_rate = sum(lost_stats.values()) / len(lost_stats) if lost_stats else 0
+        self.log_episode(episode, steps, reward, winner)
+        
+        if training_metrics:
+            self.log_training(episode, training_metrics)
 
-        print(f"\n=== Training abgeschlossen ===")
-        print(f"Durchschnittliche Belohnung: {avg_reward:.2f}")
-        print(f"Winrate: {win_rate:.2%}")
-        print(f"Lossrate: {loss_rate:.2%}")
-
-        self.log(f"=== Training Stats ===")
-        self.log(f"Durchschnittliche Belohnung: {avg_reward:.2f}")
-        self.log(f"Winrate: {win_rate:.2%}")
-        self.log(f"Lossrate: {loss_rate:.2%}")
     def plot_running_mean(self, data, title, filename, window_size=100):
-        """ Plottet den gleitenden Durchschnitt der Rewards und speichert ihn im log_dir """
+        """Plottet den gleitenden Durchschnitt der Rewards"""
         if len(data) == 0:
             print("[WARNUNG] Keine Daten zum Plotten.")
             return
