@@ -184,6 +184,8 @@ class SACAgent:
     def update(self, replay_buffer, batch_size):
         if self.use_PER:
             batch, tree_idxs, weights = replay_buffer.sample(batch_size)
+            #print(f"[DEBUG] Sampled Indices: {tree_idxs[:10]}")  # Zeigt die ersten 10 ausgewählten Indizes
+            #print(f"[DEBUG] Sampled Weights: {weights[:10]}")
             states, actions, rewards, next_states, dones = batch[:, 0], batch[:, 1], batch[:, 2], batch[:, 3], batch[:, 4]
         else:
             batch = replay_buffer.sample(batch_size)
@@ -225,7 +227,11 @@ class SACAgent:
         self.policy_optimizer.zero_grad()
         policy_loss.backward()
         self.policy_optimizer.step()
-
+        if self.use_PER:
+            with torch.no_grad():
+                td_errors = torch.abs(self.q_net1(states, actions) - target_q).detach().cpu().numpy()
+            #print(f"[DEBUG] Updating priorities for indices: {tree_idxs[:10]}")
+            replay_buffer.update_priorities(tree_idxs, td_errors)
         # **Entropie-Update**
         if self.automatic_entropy_tuning:
             alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy).detach()).mean()

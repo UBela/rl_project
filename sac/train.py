@@ -88,15 +88,21 @@ class SimpleLogger:
         os.makedirs(log_dir, exist_ok=True)
         self.log_file = os.path.join(log_dir, "training_log.json")
         self.plot_dir = log_dir
+        self.csv = os.path.join(log_dir, "training_log.csv")
 
         if not os.path.exists(self.log_file):
             with open(self.log_file, "w") as f:
                 json.dump([], f)
-
     def log(self, message):
         print(message)
-        with open(self.log_file, "a") as f:
+        with open(self.csv, "a") as f:
             f.write(message + "\n")
+
+    def log_json(self, log_data):
+        """ Speichert Logs als JSON """
+        print(log_data)  # Ausgabe für Debugging
+        with open(self.log_file, "a") as f:
+            f.write(json.dumps(log_data) + "\n")
 
     def save_model(self, agent, filename_base):
         """
@@ -218,7 +224,9 @@ if __name__ == "__main__":
     print("### Agent created ###")
 
     logger = SimpleLogger("logs")
-    trainer = trainer = SACTrainer(logger, vars(opts))
+    config = vars(opts)
+    config["use_self_play"] = opts.selfplay
+    trainer = trainer = SACTrainer(logger, config)
 
     
     print("### Trainer created ###")

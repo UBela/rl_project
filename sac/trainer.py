@@ -42,21 +42,12 @@ class SACTrainer:
                 json.dump([], f)
 
     def _select_opponent(self, opponents, i_episode, win_rate):
-        """
-        Wählt den Gegner basierend auf der Episode und Winrate aus.
-        """
-        phase1 = int(self._config["max_episodes"] * 0.3)  # Erste 30%: Nur schwache Gegner
-        phase2 = int(self._config["max_episodes"] * 0.6)  # Bis 60%: Mischung
-        phase3 = int(self._config["max_episodes"] * 0.8)  # Danach Self-Play
+        if self._config.get("use_self_play", False) and i_episode >= self._config.get('self_play_start', float('inf')):
+
+            return np.random.choice(opponents)  # Self-Play wird aktiviert
         
-        if i_episode < phase1:
-            return opponents[0]  # Nur schwache Gegner
-        elif i_episode < phase2:
-            return np.random.choice([opponents[0], opponents[1]])  # Mischung
-        elif win_rate < 0.3 and i_episode < phase3:
-            return opponents[1]  # Stärkerer Gegner nur wenn nötig
-        else:
-            return np.random.choice(opponents)  # Volles Self-Play aktiv
+        return np.random.choice([opponents[0], opponents[1]])  # Weak oder Strong zufällig wählen
+    # Volles Self-Play aktiv
 
     def _add_self_play_agent(self, agent, opponents, i_episode):
         """
@@ -145,17 +136,28 @@ class SACTrainer:
             # Training des SAC-Agenten
             if len(agent.replay_buffer) >= self._config['batch_size']:
                 for _ in range(self._config['grad_steps']):
-                    losses = agent.update(agent.replay_buffer, self._config['batch_size'])
+                    q1_loss, q2_loss, policy_loss, alpha_loss = agent.update(agent.replay_buffer, self._config['batch_size'])
 
-                    grad_updates += 1
-                    q1_losses.append(losses[0])
-                    q2_losses.append(losses[1])
-                    actor_losses.append(losses[2])
-                    alpha_losses.append(losses[3])
+                grad_updates += 1
+                q1_losses.append(q1_loss)
+                q2_losses.append(q2_loss)
+                actor_losses.append(policy_loss)
+                alpha_losses.append(alpha_loss)
 
             # Lernraten-Update
             agent.schedulers_step()
             self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
+            log_data = {
+                "Episode": episode_counter,
+                "Total_Reward": total_reward,
+                "Avg_Reward_100": np.mean(rew_stats[-100:]) if len(rew_stats) >= 100 else np.mean(rew_stats),
+                "Q1_Loss": np.mean(q1_losses[-10:]),  # Mittelwert der letzten 10 Updates für Glättung
+                "Q2_Loss": np.mean(q2_losses[-10:]),
+                "Policy_Loss": np.mean(actor_losses[-10:]),
+                "Alpha_Loss": np.mean(alpha_losses[-10:]) if agent.automatic_entropy_tuning else None,
+                "Alpha": agent.alpha if agent.automatic_entropy_tuning else None
+            }
+            self.logger.log_json(log_data)
             avg_reward = np.mean(rew_stats[-100:])  # Durchschnittlicher Reward der letzten 100 Episoden
             print(f"Episode {episode_counter}: Reward={total_reward:.3f}, Avg. Reward (100 Episoden)={avg_reward:.3f}")
 
@@ -185,6 +187,6 @@ class SACTrainer:
         # Finale Speicherung & Logging
         self.logger.print_stats(rew_stats, {}, {}, {})  # Kein loser Tracking
         self.logger.save_model(agent, 'final_agent.pkl')
-        self.logger.plot_running_mean(rew_stats, "Total Reward", "reward.pdf")
+        
 
         print("✅ Training abgeschlossen!")
