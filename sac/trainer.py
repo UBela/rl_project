@@ -11,6 +11,7 @@ import copy
 from tqdm import tqdm
 from evaluate import evaluate
 from utils.replay_buffer import PriorityReplayBuffer
+from td3.utils import *
 from replay_buffer import ReplayBuffer
 from hockey import hockey_env as h_env
 from contextlib import redirect_stdout	
@@ -41,123 +42,141 @@ class SACTrainer:
             with open(self.log_results_filename, "w") as f:
                 json.dump([], f)
 
-    def _select_opponent(self, opponents, i_episode, win_rate):
-        if self._config.get("use_self_play", False) and i_episode >= self._config.get('self_play_start', float('inf')):
-
-            return np.random.choice(opponents)  # Self-Play wird aktiviert
-        
-        return np.random.choice([opponents[0], opponents[1]])  # Weak oder Strong zufällig wählen
-    # Volles Self-Play aktiv
+    def _select_opponent(self, opponents):
+        return np.random.choice(opponents)  
 
     def _add_self_play_agent(self, agent, opponents, i_episode):
-        """
-        Fügt das aktuelle Modell als Self-Play-Gegner hinzu.
-        """
+      
         if not self._config['use_self_play']:
             return
         if i_episode >= self._config['self_play_start'] and self.total_gradient_steps % self._config['self_play_intervall'] == 0:
             print("Adding agent to self-play opponents...")
             opponents.append(copy.deepcopy(agent))
 
-    def fill_replay_buffer(self, agent, env):
-        """
-        Befüllt den Replay Buffer mit zufälligen Aktionen, um eine initiale Trainingsbasis zu schaffen,
-        während störende print-Ausgaben aus der hockey_env unterdrückt werden.
-        """
-        print("⏳ Filling replay buffer with random actions...")
+    def fill_replay_buffer(self, agent, env):  
+        
+        while len(agent.replay_buffer) < self._config['buffer_size']:
+            ob, _ = env.reset()
+            obs_agent2 = env.obs_agent_two()
+            opponent = self._select_opponent(opponents=[h_env.BasicOpponent(weak=True), h_env.BasicOpponent(weak=False)])
+            done = False
+            trunc = False
+            while not (done or trunc):
+                a1 = np.random.uniform(-1, 1, 4)
+                a2 = opponent.act(obs_agent2)
+                actions = np.hstack([a1, a2])
+                (ob_new, reward, done, trunc, _info) = env.step(actions)
+                
+                agent.store_transition((ob, a1, reward, ob_new, done))
+                ob = ob_new
+                obs_agent2 = env.obs_agent_two()
 
-        with open(os.devnull, 'w') as f, redirect_stdout(f):  # 🛑 Unterdrückt alle Prints
-            with tqdm(total=self._config["buffer_size"], desc="⏳ Filling Replay Buffer", unit="samples") as pbar:
-                while len(self.replay_buffer) < self._config["buffer_size"]:
-                    ob, _ = env.reset()
-                    obs_agent2 = env.obs_agent_two()
-                    opponent = self._select_opponent([h_env.BasicOpponent(weak=True), h_env.BasicOpponent(weak=False)], i_episode=0, win_rate=0.0)
-                    done, trunc = False, False
-
-                    # 🔄 Zufällig wählen, ob der Agent Player 1 oder Player 2 ist
-                    agent_is_player_1 = np.random.choice([True, False])
-
-                    while not (done or trunc):
-                        if agent_is_player_1:
-                            a1 = np.random.uniform(-1, 1, env.action_space.shape[0] // 2)
-                            a2 = opponent.act(obs_agent2)
-                        else:
-                            a1 = opponent.act(obs_agent2)
-                            a2 = np.random.uniform(-1, 1, env.action_space.shape[0] // 2)
-
-                        actions = np.hstack([a1, a2])
-                        (ob_new, reward, done, trunc, _info) = env.step(actions)
-
-                        # 🔄 Falls der Agent `Player 2` ist, den Reward umkehren!
-                        if not agent_is_player_1:
-                            reward = -reward  
-
-                        self.replay_buffer.add_transition([ob, a1, reward, ob_new, done])
-                        ob = ob_new
-                        obs_agent2 = env.obs_agent_two()
-
-        print(f"✅ Replay buffer filled with {len(self.replay_buffer)} samples.")
+        print(f"Replay buffer filled with {len(self.replay_buffer)} samples.")
 
     def train(self, agent, opponents, env):
-        """
-        Haupttrainingsloop für den SAC-Agenten.
-        """
+ 
         rew_stats, q1_losses, q2_losses, actor_losses, alpha_losses = [], [], [], [], []
         lost_stats, touch_stats, won_stats = {}, {}, {}
         eval_stats = {"weak": {"reward": [], "touch": [], "won": [], "lost": []},
                       "strong": {"reward": [], "touch": [], "won": [], "lost": []}}
         episode_counter, total_step_counter, grad_updates = 1, 0, 0
-
+        random_seed = self._config['random_seed']
+        iter_fit = self._config['iter_fit']
+        log_interval = self._config['log_interval']
+        max_episodes = self._config['max_episodes']
+        max_timesteps = self._config['max_timesteps']
+        render = self._config['render']
+        random_seed = self._config['random_seed']
+        use_hard_opp = self._config['use_hard_opp']
+        evaluate_every = self._config['evaluate_every']
+        rewards = []
+        lengths = []
+        wins_per_episode = {}
+        loses_per_episode = {}
+        losses = []
+        wins_per_episode_eval_easy = {}
+        loses_per_episode_eval_easy = {}
+        wins_per_episode_eval_hard = {}
+        loses_per_episode_eval_hard = {}
+        if random_seed is not None:
+            np.random.seed(random_seed)
+            torch.manual_seed(random_seed)
+            env.seed(random_seed)
         
-        self.fill_replay_buffer(agent, env)
+        if self._config['use_PER']:
+            self.fill_replay_buffer(agent, env)
+            print("Replay buffer filled with initial samples.")
 
-        while episode_counter <= self._config['max_episodes']:
+        for i_episode in range(1, max_episodes + 1):
+                # 50% chance that the agent is player 1
+            agent_is_player_1 = np.random.choice([True, False])
+            agent_is_player_1 = True
+            
             ob, _ = env.reset()
             obs_agent2 = env.obs_agent_two()
+            
             total_reward = 0
-            touched = 0
-            touch_stats[episode_counter] = 0
-            won_stats[episode_counter] = 0
-            lost_stats[episode_counter] = 0
-
-            opponent = self._select_opponent(opponents, episode_counter, 0.0)  # Winrate wird später aktualisiert
-            first_time_touch = 1
-            agent_is_player_1 = np.random.choice([True, False])
-            for step in range(self._config['max_timesteps']):
+            wins_per_episode[i_episode] = 0
+            loses_per_episode[i_episode] = 0
+            
+            if self._config['use_self_play']:
+                opponent = self._select_opponent(opponents)
+            else:
+                opponent = opponents[1]
+            
+            if self._config['use_PER']:
+                if self._config['per_beta_update'] is None:
+                    beta_update = (1.0 - self._config["per_beta"]) / max_episodes
+                else: 
+                    beta_update = self._config['per_beta_update']
+                agent.update_per_beta(beta_update)
+            
+            for t in range(max_timesteps):
+                
                 if agent_is_player_1:
-                    a1 = agent.select_action(ob)
+                    a1 = agent.act(ob)
                     a2 = opponent.act(obs_agent2)
+                    actions = np.hstack([a1, a2])
                 else:
                     a1 = opponent.act(obs_agent2)
-                    a2 = agent.select_action(ob)
-                actions = np.hstack([a1, a2])
-                next_state, reward, done, truncated, _info = env.step(actions)
-
-                if not agent_is_player_1:
-                    reward = -reward
-                '''puck_touch = _info.get('reward_touch_puck', 0.0)
-                puck_closeness = _info.get('reward_closeness_to_puck', 0.0)
-                puck_direction = _info.get('reward_puck_direction', 0.0)
-
-                step_reward = (
-                    reward  
-                    + 3.0 * puck_closeness 
-                    + 2.0 * puck_touch 
-                    + 4.0 * puck_direction  
-                    - 0.1 * (1 - puck_touch)  
-                )
-
+                    a2 = agent.act(ob)
+                    actions = np.hstack([a1, a2])
                 
-                total_reward += step_reward '''
+                (ob_new, reward, done, trunc, _info) = env.step(actions)
+                #if render: env.render()
+                
+                reward = reward_player_2(env) if not agent_is_player_1 else reward
 
-                agent.replay_buffer.add_transition((ob, a1, reward, next_state, done))
+                if agent_is_player_1:
 
-                ob = next_state
-                obs_agent2 = env.obs_agent_two()
-                total_step_counter += 1
+                    agent.store_transition((ob, a1, reward, ob_new, done))
+                else:
+                    agent.store_transition((ob, a2, reward, ob_new, done))
+                
+                total_reward += reward
+                ob_new_copy = ob_new  
+                if agent_is_player_1:
+                    ob = ob_new
+                    obs_agent2 = env.obs_agent_two()
+                else:
+                    ob = ob_new_copy  
+                    obs_agent2 = env.obs_agent_two()
 
-                if done or truncated:
+                self.total_steps += 1
+                
+
+                if done or trunc:
+                    winner = _info.get('winner', None)
+                    if agent_is_player_1:
+                        wins_per_episode[i_episode] = 1 if winner == 1 else 0
+                        loses_per_episode[i_episode] = 1 if winner == -1 else 0
+                    else:
+                        wins_per_episode[i_episode] = 1 if winner == -1 else 0
+                        loses_per_episode[i_episode] = 1 if winner == 1 else 0
                     break
+            losses.extend(agent.train(iter_fit=iter_fit))
+            rewards.append(total_reward)
+            lengths.append(t)
             training_metrics = {
                 "td_error_mean": 0.0,
                 "td_error_std": 0.0,
@@ -211,9 +230,11 @@ class SACTrainer:
             training_metrics["log_prob_std"] = np.std(alpha_losses[-100:]) if len(alpha_losses) > 0 else 0
             training_metrics["alpha"] = agent.alpha if agent.automatic_entropy_tuning else 0.0
 
-            # Lernraten-Update
-            agent.schedulers_step()
-      
+            
+            if self._config['lr_milestones']:
+                agent.schedulers_step()
+            self.total_gradient_steps += iter_fit
+            self._add_self_play_agent(agent, opponents, i_episode)    
             # Konvertiere `training_metrics` Werte in native Python-Datentypen
             training_metrics = {k: float(v) for k, v in training_metrics.items()}
 

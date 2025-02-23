@@ -167,7 +167,9 @@ class SACAgent:
         self.q_net2.train()
         self.policy_net.train()
 
-
+    def store_transition(self, transition: tuple):
+        
+        self.replay_buffer.add_transition(transition)
     def act(self, state):
         return self.select_action(state)
     def schedulers_step(self):
