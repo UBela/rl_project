@@ -54,26 +54,30 @@ class SACTrainer:
             new_opponent.eval()
             opponents.append(new_opponent)
 
-    def fill_replay_buffer(self, agent, env):  
-        
-        while len(agent.replay_buffer) < self._config['buffer_size']:
-            ob, _ = env.reset()
-            obs_agent2 = env.obs_agent_two()
-            opponent = self._select_opponent([h_env.BasicOpponent(weak=True), h_env.BasicOpponent(weak=False)])
-            done = False
+    def fill_replay_buffer(self, agent, env):
 
-            while not done:
-                a1 = np.random.uniform(-1, 1, 4)
-                a2 = opponent.act(obs_agent2)
-                actions = np.hstack([a1, a2])
-                ob_new, reward, done, trunc, _ = env.step(actions)
+        print("⏳ Filling replay buffer with random actions...")
 
-                agent.store_transition((ob, a1, reward, ob_new, done))
-                ob = ob_new
-                obs_agent2 = env.obs_agent_two()
+        with open(os.devnull, 'w') as f, redirect_stdout(f):  # 🛑 Unterdrückt alle Prints
+            with tqdm(total=self._config["buffer_size"], desc="⏳ Filling Replay Buffer", unit="samples") as pbar:
+                while len(self.replay_buffer) < self._config["buffer_size"]:
+                    ob, _ = env.reset()
+                    obs_agent2 = env.obs_agent_two()
+                    opponent = self._select_opponent([h_env.BasicOpponent(weak=True)])
+                    done, trunc = False, False
 
-        print(f"Replay buffer filled with {len(agent.replay_buffer)} samples.")
+                    while not (done or trunc):
+                        a1 = np.random.uniform(-1, 1, env.action_space.shape[0] // 2)
+                        a2 = opponent.act(obs_agent2)
+                        actions = np.hstack([a1, a2])
+                        (ob_new, reward, done, trunc, _info) = env.step(actions)
 
+                        self.replay_buffer.add_transition([ob, a1, reward, ob_new, done])
+                        pbar.update(1)
+                        ob = ob_new
+                        obs_agent2 = env.obs_agent_two()
+
+        print(f"✅ Replay buffer filled with {len(self.replay_buffer)} samples.")
     def train(self, agent, opponents, env, rurn_evaluation=True):
         rew_stats, q1_losses, q2_losses, actor_losses, alpha_losses = [], [], [], [], []
 
@@ -113,8 +117,7 @@ class SACTrainer:
             first_time_touch = 1
             for step in range(self._config['max_timesteps']):
                 a1 = agent.act(ob)
-                a2 = opponent.act(obs_agent2)
-
+                
                 if self._config['mode'] == 'defense':
                     a2 = opponent.act(obs_agent2)
                 elif self._config['mode'] == 'shooting':
@@ -164,24 +167,45 @@ class SACTrainer:
                         new_op_grad.append(grad_updates)
             agent.schedulers_step()
             self.logger.info(f"Episode {episode_counter} finished after {step} steps with total reward {total_reward} winner {env.winner}")
-            #self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
+            
 
             if episode_counter % self._config['evaluate_every'] == 0:
-                agent.eval()
+                with open(os.devnull, 'w') as f, redirect_stdout(f): 
+                    agent.eval()
+                
                 for eval_op in ['strong', 'weak']:
                     ev_opponent = opponents[0] if eval_op == 'strong' else h_env.BasicOpponent(False)
-                    rew, touch, won, lost = evaluate(agent, env, ev_opponent, 100)
+                    with open(os.devnull, 'w') as f, redirect_stdout(f):     
+                        rew, touch, won, lost = evaluate(agent, env, ev_opponent, 100)
                     eval_stats[eval_op]['reward'].append(rew)
                     eval_stats[eval_op]['touch'].append(touch)
                     eval_stats[eval_op]['won'].append(won)
                     eval_stats[eval_op]['lost'].append(lost)
                 agent.train()
+            
+            if episode_counter % self._config["log_interval"] == 0:
+                trainingmetrics = {
+                    'q1_loss': np.mean(q1_losses),
+                    'q2_loss': np.mean(q2_losses),
+                    'policy_loss': np.mean(actor_losses),
+                    'alpha_loss': np.mean(alpha_losses),
+                    'total_reward': total_reward,
+                    'touch': touch_stats[episode_counter],
+                    'won': won_stats[episode_counter],
+                    'lost': lost_stats[episode_counter],
+                    'total_steps': total_step_counter,
+                    'grad_updates': grad_updates}
+                self.logger.log_training(episode_counter, trainingmetrics)
                 self.logger.save_model(agent, episode_counter)
+                #self.logger.info(f"Episode {episode_counter} evaluation: {eval_stats}")
+                
+
             rew_stats.append(total_reward)
 
             
             episode_counter += 1
         self.logger.info('Training finished.')
+        
         self.logger.info(f'Reward: {rew_stats} Touch: {touch_stats} Won: {won_stats} Lost: {lost_stats}')
         
         self.logger.info('Saving training statistics...')
@@ -204,9 +228,9 @@ class SACTrainer:
             #)
 
         # Save agent
-        self.logger.save_model(agent, 'agent.pkl')
+        self.logger.save_model(agent, 'agent')
 
         #if self.run_evaluation:
             #agent.eval()
             #agent._config['show'] = True
-        evaluate(agent, env, h_env.BasicOpponent(weak=False), 1000)
+        evaluate(agent, env, h_env.BasicOpponent(weak=False), 200)
