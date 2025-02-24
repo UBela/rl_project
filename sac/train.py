@@ -122,8 +122,13 @@ class Logger:
         """Speichert das Modell als .pth & .pkl."""
         model_pth = self.agents_prefix_path.joinpath(f"{filename}.pth")
         model_pkl = self.agents_prefix_path.joinpath(f"{filename}.pkl")
-
-        torch.save(agent.policy_net.state_dict(), model_pth)
+        
+        state = {
+            "policy_net": agent.policy_net.state_dict(),
+            "qnet1": agent.qnet1.state_dict(),
+            "qnet_target": agent.qnet_target.state_dict()
+        }
+        torch.save(state, model_pth)
 
         with open(model_pkl, "wb") as f:
             pickle.dump(agent, f)
@@ -234,7 +239,7 @@ if __name__ == "__main__":
     env = h_env.HockeyEnv(mode=mode_mapping[opts.mode], verbose=(not opts.q))
 
     # Erstelle Gegner
-    opponents = [h_env.BasicOpponent(weak=True)]#, h_env.BasicOpponent(weak=False)]
+    opponents = [h_env.BasicOpponent(weak=True), h_env.BasicOpponent(weak=False)]
     config = {
         "hidden_dim": [256, 256],
         "max_episodes": opts.max_episodes,

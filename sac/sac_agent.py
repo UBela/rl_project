@@ -21,6 +21,7 @@ class SACAgent:
         self.action_space = action_space
         self.action_dim = action_dim
         self.hidden_dim = self.hidden_dim
+        self.alpha_milestones = [10000]
         # **Replay Buffer Initialisierung**
         if self.use_PER:
             self.replay_buffer = PriorityReplayBuffer(self.buffer_size, alpha=self.per_alpha, beta=self.per_beta)
@@ -170,5 +171,7 @@ class SACAgent:
 
 
     def schedulers_step(self):
-        self.policy_net.scheduler.step()
-        self.qnet1.lr_scheduler.step()
+        if self.policy_net.scheduler:
+            self.policy_net.scheduler.step()
+        if self.qnet1.lr_scheduler:
+            self.qnet1.lr_scheduler.step()

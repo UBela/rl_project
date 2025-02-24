@@ -102,6 +102,12 @@ class SACTrainer:
         grad_updates = 0
         new_op_grad = []
         while episode_counter <= self._config['max_episodes']:
+            if episode_counter  == int(self._config['max_episodes']/3):
+                self._config['mode'] = 'shooting'
+                print("Switching to shooting mode")
+            if episode_counter  == int(2*self._config['max_episodes']/3):
+                self._config['mode'] = 'defense'
+                print("Switching to defense mode")
             ob, _ = env.reset()
             obs_agent2 = env.obs_agent_two()
             total_reward, touched = 0, 0

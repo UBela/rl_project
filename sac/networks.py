@@ -25,7 +25,7 @@ class QNetwork(nn.Module):
         super(QNetwork, self).__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         #if isinstance(hidden_sizes, int):
-        layer_sizes = [state_dim[0] + action_dim] + hidden_sizes + [1]
+        layer_sizes = [18 + action_dim] + hidden_sizes + [1]
 
             # Q1 architecture
         self.q1_layers = nn.ModuleList([nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
@@ -55,17 +55,18 @@ class QNetwork(nn.Module):
         return self.loss_fn(q_values, target_q_values)
     
 class PolicyNetwork(nn.Module):
-    def __init__(self, state_dim, action_dim, action_space, hidden_dim, learning_rate, lr_milestones=None, lr_factor=0.5, reparam_noise=1e-6):
+    def __init__(self, state_dim, action_dim, action_space, hidden_dim, learning_rate, lr_milestones=[1000], lr_factor=0.5, reparam_noise=1e-6):
         super(PolicyNetwork, self).__init__()
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
         self.reparam_noise = reparam_noise
         self.action_space = action_space
         self.layers = nn.ModuleList()
-        self.layers.append(nn.Linear(state_dim[0], hidden_dim[0]))
-        self.layers.append(nn.Linear(hidden_dim[0], hidden_dim[0]))        
-        self.mean = nn.Linear(hidden_dim[0], action_dim)
-        self.log_std = nn.Linear(hidden_dim[0], action_dim)
+        self.layers.append(nn.Linear(18, 256))
+        self.layers.append(nn.Linear(256, 256))        
+        self.mean = nn.Linear(256, action_dim)
+        self.log_std = nn.Linear(256, action_dim)
+        lr_milestones = [1000]
         self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate, eps=0.000001)
         if lr_milestones:
             self.scheduler = torch.optim.lr_scheduler.MultiStepLR(
