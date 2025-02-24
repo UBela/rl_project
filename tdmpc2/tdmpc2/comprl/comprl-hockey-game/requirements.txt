@@ -1,0 +1,3 @@
+comprl
+numpy
+hockey @ git+https://git@github.com/martius-lab/hockey-env.git
