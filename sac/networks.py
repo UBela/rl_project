@@ -55,7 +55,7 @@ class QNetwork(nn.Module):
         return self.loss_fn(q_values, target_q_values)
     
 class PolicyNetwork(nn.Module):
-    def __init__(self, state_dim, action_dim, action_space, hidden_dim, learning_rate, lr_milestones=[1000], lr_factor=0.5, reparam_noise=1e-6):
+    def __init__(self, state_dim, action_dim, action_space, hidden_dim, learning_rate, lr_milestones=[10000], lr_factor=0.5, reparam_noise=1e-6):
         super(PolicyNetwork, self).__init__()
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
@@ -66,7 +66,7 @@ class PolicyNetwork(nn.Module):
         self.layers.append(nn.Linear(256, 256))        
         self.mean = nn.Linear(256, action_dim)
         self.log_std = nn.Linear(256, action_dim)
-        lr_milestones = [1000]
+        lr_milestones = [10000]
         self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate, eps=0.000001)
         if lr_milestones:
             self.scheduler = torch.optim.lr_scheduler.MultiStepLR(
