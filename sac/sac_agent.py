@@ -11,190 +11,81 @@ import os
 import json
 from utils.replay_buffer import PriorityReplayBuffer
 from replay_buffer import ReplayBuffer
+from networks import *
 
 
-# **Wert-Netzwerk (Value Network)**
-class ValueNetwork(nn.Module):
-    def __init__(self, state_dim, hidden_dim):
-        super(ValueNetwork, self).__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(state_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, 1)
-        )
-
-    def forward(self, state):
-        return self.layers(state)
-
-
-# **Q-Wert-Netzwerk**
-class QNetwork(nn.Module):
-    def __init__(self, state_dim, action_dim, hidden_dim):
-        super(QNetwork, self).__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(state_dim + action_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, 1)
-        )
-
-    def forward(self, state, action):
-        x = torch.cat([state, action], dim=1)
-        return self.layers(x)
-
-
-# **Policy-Netzwerk (Gaussian Policy)**
-class PolicyNetwork(nn.Module):
-    def __init__(self, state_dim, action_dim, hidden_dim):
-        super(PolicyNetwork, self).__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(state_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU()
-        )
-        self.mean = nn.Linear(hidden_dim, action_dim)
-        self.log_std = nn.Linear(hidden_dim, action_dim)
-
-    def forward(self, state):
-        x = self.layers(state)
-        mean = self.mean(x)
-        log_std = torch.clamp(self.log_std(x), -5, 2)
-        return mean, log_std
-
-    def sample(self, state, eval_mode=False):
-        mean, log_std = self.forward(state)
-        std = log_std.exp()
-        normal = torch.distributions.Normal(mean, std)
-        z = normal.rsample() if not eval_mode else mean
-        action = torch.tanh(z)
-        log_prob = normal.log_prob(z) - torch.log(1 - action.pow(2) + 1e-6)
-        return action, log_prob.sum(dim=-1, keepdim=True)
-
-
-# **SAC-Agent**
 class SACAgent:
-    def __init__(self, state_dim, action_dim, hidden_dim, gamma, tau, alpha,
-                 automatic_entropy_tuning, policy_lr, q_lr, value_lr, alpha_lr,
-                 buffer_size, per_alpha, per_beta, per_beta_update, alpha_milestones,
-                 use_PER, device, results_folder):
-
-        self.state_dim = state_dim
+    def __init__(self, state_dim, action_space, hidden_dim, config, action_dim=4):
+        self.__dict__.update(config)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.action_space = action_space
         self.action_dim = action_dim
-        self.gamma = gamma
-        self.tau = tau
-        self.alpha = alpha
-        self.device = torch.device(device)
-        self.automatic_entropy_tuning = automatic_entropy_tuning
-        self.use_PER = use_PER
-        self.results_folder = results_folder
-        self.alpha_lr = alpha_lr
-        self.alpha_milestones = alpha_milestones
-        self.per_beta_update = per_beta_update
-
-        os.makedirs(self.results_folder, exist_ok=True)
-
+        self.hidden_dim = hidden_dim
         # **Replay Buffer Initialisierung**
-        if use_PER:
-            self.replay_buffer = PriorityReplayBuffer(buffer_size, alpha=per_alpha, beta=per_beta)
+        if self.use_PER:
+            self.replay_buffer = PriorityReplayBuffer(self.buffer_size, alpha=self.per_alpha, beta=self.per_beta)
             print("Prioritized Experience Replay")
         else:
-            self.replay_buffer = ReplayBuffer(buffer_size)
+            self.replay_buffer = ReplayBuffer(self.buffer_size)
             print("Standard Replay Buffer")
 
-        # **Netzwerke initialisieren**
-        self.value_net = ValueNetwork(state_dim, hidden_dim).to(self.device)
-        self.target_value_net = ValueNetwork(state_dim, hidden_dim).to(self.device)
-        self.q_net1 = QNetwork(state_dim, action_dim, hidden_dim).to(self.device)
-        self.q_net2 = QNetwork(state_dim, action_dim, hidden_dim).to(self.device)
-        self.policy_net = PolicyNetwork(state_dim, action_dim, hidden_dim).to(self.device)
+        # **Netzwerke Initialisierung**
+        self.qnet1 = QNetwork(state_dim, self.action_dim, self.hidden_dim, self.q_lr)
+        self.qnet2 = QNetwork(state_dim, self.action_dim, self.hidden_dim, self.q_lr)
 
-        # **Optimierer**
-        self.value_optimizer = optim.Adam(self.value_net.parameters(), lr=value_lr)
-        self.q_optimizer1 = optim.Adam(self.q_net1.parameters(), lr=q_lr)
-        self.q_optimizer2 = optim.Adam(self.q_net2.parameters(), lr=q_lr)
-        self.policy_optimizer = optim.Adam(self.policy_net.parameters(), lr=policy_lr)
+        # **Target Q-Netzwerk**
+        self.qnet_target = QNetwork(state_dim, self.action_dim, self.hidden_dim)
+        self.qnet_target.load_state_dict(self.qnet1.state_dict())
 
-        self.q_scheduler1 = torch.optim.lr_scheduler.MultiStepLR(self.q_optimizer1, milestones=[10000, 30000], gamma=0.5)
-        self.q_scheduler2 = torch.optim.lr_scheduler.MultiStepLR(self.q_optimizer2, milestones=[10000, 30000], gamma=0.5)
-        self.policy_scheduler = torch.optim.lr_scheduler.MultiStepLR(self.policy_optimizer, milestones=[10000, 30000], gamma=0.5)
+        self.policy_net = PolicyNetwork(state_dim, self.action_dim, self.action_space, self.hidden_dim, self.policy_lr, self.lr_milestones)
 
-
-        # **Soft Target Update**
-        self.soft_tau = tau
-
-        # **Entropie-Anpassung**
+        # **Automatische Entropie-Anpassung**
         if self.automatic_entropy_tuning:
-            self.target_entropy = -torch.prod(torch.Tensor([action_dim]).to(self.device)).item()
+            self.target_entropy = -torch.tensor(self.action_dim).to(self.device)
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
-            self.alpha_optimizer = optim.Adam([self.log_alpha], lr=alpha_lr)
+            self.alpha_optimizer = optim.Adam([self.log_alpha], lr=self.alpha_lr)
 
-            if isinstance(alpha_milestones, str):
-                alpha_milestones = [int(x) for x in alpha_milestones.split(' ')]
+            if isinstance(self.alpha_milestones, str):
+                self.alpha_milestones = [int(x) for x in self.alpha_milestones.split(' ')]
 
             self.alpha_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-                self.alpha_optimizer, milestones=alpha_milestones, gamma=0.5
+                self.alpha_optimizer, milestones=self.alpha_milestones, gamma=0.5
             )
-        # **Target-Netzwerk Gewichte synchronisieren**
-        self.update_target_network(soft_update=False)
 
-    def update_target_network(self, soft_update=True):
-        """ Kopiert die Gewichte ins Target-Netzwerk mit Soft-Update. """
-        tau = self.soft_tau if soft_update else 1.0
-        for target_param, param in zip(self.target_value_net.parameters(), self.value_net.parameters()):
-            target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
-
-    def select_action(self, state, eval_mode=False):
-        state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
-        with torch.no_grad():
-            action, _ = self.policy_net.sample(state, eval_mode)
-        return action.cpu().numpy().flatten()
     def eval(self):
- 
-        self.value_net.eval()
-        self.target_value_net.eval()
-        self.q_net1.eval()
-        self.q_net2.eval()
+        self.qnet1.eval()
+        self.qnet_target.eval()
+        self.qnet_target.eval()
         self.policy_net.eval()
-    def train(self):
 
-        self.value_net.train()
-        self.target_value_net.train()
-        self.q_net1.train()
-        self.q_net2.train()
+    def train(self):
+        self.qnet1.train()
+        self.qnet_target.train()
+        self.qnet_target.train()
         self.policy_net.train()
 
+    def select_action(self, state, eval_mode=False): 
+        state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
+        with torch.no_grad():
+            action, log_prob, mean_action, clipped_action = self.policy_net.sample(state, eval_mode)  # ✅ Alle vier Werte auflisten
+        return action.cpu().numpy().flatten()  
+
+
     def store_transition(self, transition: tuple):
-        
         self.replay_buffer.add_transition(transition)
+
     def act(self, state):
         return self.select_action(state)
-    def schedulers_step(self):
-        """Aktualisiert die Lernraten-Scheduler für Q-Netzwerke, Policy und Alpha (falls aktiv)."""
-        if hasattr(self, "q_scheduler1"):
-            self.q_scheduler1.step()
-        if hasattr(self, "q_scheduler2"):
-            self.q_scheduler2.step()
-        if hasattr(self, "policy_scheduler"):
-            self.policy_scheduler.step()
-        if self.automatic_entropy_tuning and hasattr(self, "alpha_scheduler"):
-            self.alpha_scheduler.step()
 
-
-    def update(self, replay_buffer, batch_size):
+    def update(self, replay_buffer, batch_size, total_step):
         if self.use_PER:
             batch, tree_idxs, weights = replay_buffer.sample(batch_size)
-            #print(f"[DEBUG] Sampled Indices: {tree_idxs[:10]}")  # Zeigt die ersten 10 ausgewählten Indizes
-            #print(f"[DEBUG] Sampled Weights: {weights[:10]}")
             states, actions, rewards, next_states, dones = batch[:, 0], batch[:, 1], batch[:, 2], batch[:, 3], batch[:, 4]
+            weights = torch.FloatTensor(weights).to(self.device)
         else:
             batch = replay_buffer.sample(batch_size)
             tree_idxs = None  
             weights = torch.ones(batch_size, 1).to(self.device)  
-
             states, actions, rewards, next_states, dones = zip(*batch)
 
         states = torch.FloatTensor(np.vstack(states)).to(self.device)
@@ -203,44 +94,55 @@ class SACAgent:
         rewards = torch.FloatTensor(np.vstack(rewards)).to(self.device)
         dones = torch.FloatTensor(np.vstack(dones)).to(self.device)
 
-        rewards = torch.clamp(rewards, -10, 10)
-
-        # **Soft-Q-Zielwert**
+        # Berechne das Ziel-Q-Value mit Target-Q-Netzwerk
         with torch.no_grad():
-            next_v = self.target_value_net(next_states)
-            target_q = rewards + (1 - dones) * self.gamma * next_v
+            next_state_action, next_state_log_pi, _, _ = self.policy_net.sample(next_states)
+            q1_next_targ, q2_next_targ = self.qnet_target(next_states, next_state_action)
+            min_qf_next_target = torch.min(q1_next_targ, q2_next_targ) - self.alpha * next_state_log_pi
+            target_q = rewards + (1 - dones) * self.gamma * min_qf_next_target
 
-        # **Q-Wert Update**
-        q1_loss = nn.MSELoss()(self.q_net1(states, actions), target_q)
-        q2_loss = nn.MSELoss()(self.q_net2(states, actions), target_q)
+        # Berechne Q-Werte für das aktuelle Zustand-Aktionspaar
+        q1_pred, q2_pred = self.qnet1(states, actions)
+        
 
-        self.q_optimizer1.zero_grad()
-        q1_loss.backward()
-        self.q_optimizer1.step()
+        # Berechne Q-Verluste
+        q1_loss = (weights * (q1_pred - target_q) ** 2).mean()
+        q2_loss = (weights * (q2_pred - target_q) ** 2).mean()
 
-        self.q_optimizer2.zero_grad()
+        # Optimierung für Q1-Netzwerk
+        self.qnet1.optimizer.zero_grad()
+        q1_loss.backward() 
+        self.qnet1.optimizer.step()
+
+        # Optimierung für Q2-Netzwerk
+        self.qnet_target
         q2_loss.backward()
-        self.q_optimizer2.step()
+        self.qnet_target.optimizer.step()
 
-        # **Policy-Netzwerk Update**
-        new_actions, log_probs = self.policy_net.sample(states)
-        min_q = torch.min(self.q_net1(states, new_actions), self.q_net2(states, new_actions))
+        # **Soft-Update des Target-Q-Netzwerks**
+        if total_step % self.target_update_interval == 0:
+            for target_param, param in zip(self.qnet_target.parameters(), self.qnet1.parameters()):
+                target_param.data.copy_(target_param.data * (1 - self.soft_tau) + param.data * self.soft_tau)
+
+        # Update Policy-Netzwerk
+        new_actions, log_probs, mean_action, clipped_action = self.policy_net.sample(states)
+        q1_value, _ = self.qnet1(states, new_actions)
+        q2_value, _ = self.qnet_target(states, new_actions)
+        min_q = torch.min(q1_value, q2_value)
         policy_loss = (self.alpha * log_probs - min_q).mean()
 
-        self.policy_optimizer.zero_grad()
+        self.policy_net.optimizer.zero_grad()
         policy_loss.backward()
-        self.policy_optimizer.step()
-        if self.use_PER:
-            with torch.no_grad():
-                td_errors = torch.abs(self.q_net1(states, actions) - target_q).detach().cpu().numpy()
-            #print(f"[DEBUG] Updating priorities for indices: {tree_idxs[:10]}")
-            replay_buffer.update_priorities(tree_idxs, td_errors)
+        self.policy_net.optimizer.step()
 
-            avg_priority = np.mean(td_errors)
-            priority_min = np.min(td_errors)
-            priority_max = np.max(td_errors)
-        else:
-            avg_priority, priority_min, priority_max = None, None, None
+        # Berechne TD-Fehler für PER (falls aktiviert)
+        td_error = torch.abs(q1_pred - target_q).detach().cpu().numpy()
+        if self.use_PER:
+            replay_buffer.update_priorities(tree_idxs, td_error)
+
+        avg_priority = np.mean(td_error) if self.use_PER else 0.0
+        priority_min = np.min(td_error) if self.use_PER else 0.0
+        priority_max = np.max(td_error) if self.use_PER else 0.0
 
         # **Entropie-Update**
         if self.automatic_entropy_tuning:
@@ -248,13 +150,10 @@ class SACAgent:
             self.alpha_optimizer.zero_grad()
             alpha_loss.backward()
             self.alpha_optimizer.step()
+            self.alpha_scheduler.step()
             self.alpha = self.log_alpha.exp().item()
-            self.alpha_scheduler.step()  # Lernrate für Alpha-Optimierer anpassen
         else:
             alpha_loss = torch.tensor(0.0)
-
-        # **Target-Netzwerk Update**
-        self.update_target_network()
 
         return {
             "q1_loss": q1_loss.item(),
@@ -262,11 +161,16 @@ class SACAgent:
             "policy_loss": policy_loss.item(),
             "alpha_loss": alpha_loss.item(),
             "alpha": self.alpha,
-            "td_error_mean": np.mean(td_errors) if self.use_PER else 0.0,
-            "td_error_std": np.std(td_errors) if self.use_PER else 0.0,
-            "avg_priority": avg_priority if self.use_PER else 0.0,
-            "priority_min": priority_min if self.use_PER else 0.0,
-            "priority_max": priority_max if self.use_PER else 0.0,
-            "priority_mean": np.mean(td_errors) if self.use_PER else 0.0,
+            "td_error_mean": np.mean(td_error) if self.use_PER else 0.0,
+            "td_error_std": np.std(td_error) if self.use_PER else 0.0,
+            "avg_priority": avg_priority,
+            "priority_min": priority_min,
+            "priority_max": priority_max,
+            "priority_mean": np.mean(td_error) if self.use_PER else 0.0,
             "per_beta": self.per_beta_update if self.per_beta_update else 0.0
         }
+
+
+    def schedulers_step(self):
+        self.policy_net.scheduler.step()
+        self.qnet1.lr_scheduler.step()
