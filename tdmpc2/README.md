@@ -1,6 +1,6 @@
 <h1>Hockey TD-MPC2</span></h1>
 
-This codebase was used to train an TD-MPC2 agent for the Hockey Environment. Most important contribution is the `tdmpc/envs/hockey.py` file containing the hockey environment and the wrapper.
+This codebase was used to train an TD-MPC2 agent for the Hockey Environment. Most important contribution is the `tdmpc2/envs/hockey.py` file containing the hockey environment and the wrapper. Smaller changes in `tdmpc2/envs/__init__.py`, `tdmpc2/train.py` and `tdmpc2/config.yaml`.
 
 In the following the original README from TD-MPC2:
 
