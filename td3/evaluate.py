@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from td3.utils import *
 import time
 def evaluate(agent, env, opponent, max_episodes=100, max_timesteps=1000, render = False, agent_is_player_1 = True):
@@ -50,5 +51,7 @@ def evaluate(agent, env, opponent, max_episodes=100, max_timesteps=1000, render 
                 break
     if render and len(frames) > 0:
         curr_time = time.strftime("%Y%m%d-%H%M%S")
+        if not os.path.exists('./results/'):
+            os.makedirs('./results/')
         save_frames_as_gif(frames, path='./results/', filename=f'evaluation_{curr_time}.gif')
     return wins_per_episode, loses_per_episode
