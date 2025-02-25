@@ -66,7 +66,7 @@ jupyterlab_widgets==3.0.13
 kiwisolver==1.4.8
 markdown-it-py==3.0.0
 MarkupSafe==3.0.2
-matplotlib==3.10.0
+matplotlib==3.9.4
 matplotlib-inline==0.1.7
 mdurl==0.1.2
 mistune==3.1.1

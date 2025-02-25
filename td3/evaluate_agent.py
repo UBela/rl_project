@@ -25,8 +25,9 @@ if __name__ == '__main__':
     print("### Start evaluation ###")
     #play one game per opponent and record the results
     for opponent in opponents:
-        wins, loses = evaluate(agent, env, opponent, max_episodes=1, max_timesteps=1000, render=True, agent_is_player_1=True)
-        win_rate, lose_rate = sum(wins)/1, sum(loses)/1
+        max_episodes = 4
+        wins, loses = evaluate(agent, env, opponent, max_episodes=max_episodes, max_timesteps=1000, render=True, agent_is_player_1=True)
+        win_rate, lose_rate = sum(wins)/max_episodes, sum(loses)/max_episodes
         print(f"Winrate: {win_rate:.3f} Lossrate: {lose_rate:.3f}")
     print("### Evaluation done ###")
     print("### End ###")

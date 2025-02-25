@@ -1,6 +1,6 @@
 import numpy as np
 from td3.utils import *
-
+import time
 def evaluate(agent, env, opponent, max_episodes=100, max_timesteps=1000, render = False, agent_is_player_1 = True):
     
     wins_per_episode = np.zeros(max_episodes + 1)
@@ -27,10 +27,7 @@ def evaluate(agent, env, opponent, max_episodes=100, max_timesteps=1000, render 
 
             (ob_new, reward, done, trunc, _info) = env.step(actions)
             if render:
-                frames.append(get_frame(env))
-                
-                
-            
+                frames.append(env.render(mode='rgb_array'))
             reward = reward * -1  if not agent_is_player_1 else reward
 
             total_reward += reward
@@ -51,7 +48,7 @@ def evaluate(agent, env, opponent, max_episodes=100, max_timesteps=1000, render 
                     wins_per_episode[i_episode] = 1 if winner == -1 else 0
                     loses_per_episode[i_episode] = 1 if winner == 1 else 0
                 break
-    if render:
-        opponent_name = opponent.__class__.__name
-        frames_2_gif(frames, f'game_vs_{opponent_name}.gif')
+    if render and len(frames) > 0:
+        curr_time = time.strftime("%Y%m%d-%H%M%S")
+        save_frames_as_gif(frames, path='./results/', filename=f'evaluation_{curr_time}.gif')
     return wins_per_episode, loses_per_episode
