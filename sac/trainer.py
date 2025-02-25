@@ -106,7 +106,7 @@ class SACTrainer:
                 self._config['mode'] = 'shooting'
                 print("Switching to shooting mode")
             if episode_counter  == int(2*self._config['max_episodes']/3):
-                self._config['mode'] = 'defense'
+                self._config['mode'] = 'normal'
                 print("Switching to defense mode")
             ob, _ = env.reset()
             obs_agent2 = env.obs_agent_two()
