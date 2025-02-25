@@ -1,7 +1,8 @@
 import numpy as np
 import torch
 import gymnasium as gym
-
+import matplotlib.pyplot as plt
+import imageio
 
 class RandomAgent:
     
@@ -46,3 +47,19 @@ def reward_player_2(env):
             else:
                 r += 10.0
         return r
+    
+
+def get_frame(env):
+    fig, ax = plt.subplots(figsize=(6,6))
+    env.render(mode='human')
+    plt.axis('off') 
+    
+    fig.canvas.draw()
+    frame = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    frame = frame.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    plt.close(fig)
+    return frame
+def frames_2_gif(frames, filename):
+    if len(frames) == 0:
+        return
+    imageio.mimsave(filename, frames, fps=30)

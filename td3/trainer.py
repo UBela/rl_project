@@ -6,7 +6,6 @@ import torch
 import time
 import numpy as np
 import pickle
-from td3.utils import *
 from td3.evaluate import evaluate
 from hockey import hockey_env as h_env
 import copy
@@ -98,7 +97,7 @@ class TD3Trainer:
         for i_episode in range(1, max_episodes + 1):
             # 50% chance that the agent is player 1
             agent_is_player_1 = np.random.choice([True, False])
-            agent_is_player_1 = True
+            agent_is_player_1 = True # swapping sides did not work as intended, no time to fix
             
             ob, _ = env.reset()
             obs_agent2 = env.obs_agent_two()
@@ -133,7 +132,7 @@ class TD3Trainer:
                 (ob_new, reward, done, trunc, _info) = env.step(actions)
                 #if render: env.render()
                 
-                reward = reward_player_2(env) if not agent_is_player_1 else reward
+                reward = reward * (-1) if not agent_is_player_1 else reward
 
                 if agent_is_player_1:
 

@@ -31,7 +31,7 @@ cd /mnt/qb/work/ludwig/lqb122/rl_project/td3
 
 # Run your code
 echo "-------- PYTHON OUTPUT ----------"
-python3 train_agent.py --results_folder ./results/competition/test --use_PER --max_episodes 60000 --self_play_start 30000 --actor_lr 0.0003 --critic_lr 0.0003  --per_alpha 0.3 --per_beta_update 0.0006 --policy_update_freq 5 --lr_milestones "50000"
+python3 evaluate_agent.py
 
 # Check if Python script ran successfully
 if [ $? -ne 0 ]; then

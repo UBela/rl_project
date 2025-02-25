@@ -9,7 +9,6 @@ from td3.trainer import TD3Trainer
 import torch
 from hockey import hockey_env as h_env
 import optparse
-from td3.utils import RandomAgent
 import sys
 import time
 

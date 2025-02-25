@@ -28,7 +28,8 @@ class TD3Agent(object):
             "use_PER": True,
             "per_alpha": 0.3,
             "per_beta": 0.4,
-            "per_beta_update": 0.0006
+            "per_beta_update": 0.0006,
+            "lr_milestones": ""
             
             
         }
@@ -134,7 +135,8 @@ class TD3Agent(object):
     def restore_state(self, state):
         self.critic_net.load_state_dict(state[0])
         self.actor_net.load_state_dict(state[1])
-        self._copy_nets()
+        self._copy_nets() # not needed for inference
+
     
     def set_to_train(self):
         self.actor_net.train()

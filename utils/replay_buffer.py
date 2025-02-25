@@ -78,8 +78,6 @@ class PriorityReplayBuffer:
 
         update_beta(update_per_beta):
             Updates the beta value gradually, which is used for computing importance-sampling weights.
-            
-        This docstring was generated with the help of chatGPT
     """
 
     
