@@ -31,7 +31,7 @@ cd /mnt/qb/work/ludwig/lqb122/rl_project/td3
 
 # Run your code
 echo "-------- PYTHON OUTPUT ----------"
-python script.py --state_dict_path "./results/competition/td3_60000-t32-sNone.pth" --max_episodes 4
+python evaluate_agent.py --state_dict_path "./results/competition/update_every_5_tau_0.005_lr_50_sp_30/td3_60000-t32-sNone.pth" --max_episodes 4
 
 # Check if Python script ran successfully
 if [ $? -ne 0 ]; then
