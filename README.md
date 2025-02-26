@@ -6,9 +6,9 @@
 
 ### Gameplay Demonstration  
 - **TD3 vs Weak Opponent**  
-  ![Weak Opponent Gameplay](![Weak Opponent Gameplay](td3/results/evaluation_20250226-141914.gif)) *(Replace # with the actual GIF link)*  
+  ![Weak Opponent Gameplay](![Weak Opponent Gameplay](td3/results/evaluation_20250226-141914.gif))  
 - **TD3 vs Strong Opponent**  
-  ![Strong Opponent Gameplay](![Weak Opponent Gameplay](td3/results/evaluation_20250226-141922.gif)) *(Replace # with the actual GIF link)*  
+  ![Strong Opponent Gameplay](![Weak Opponent Gameplay](td3/results/evaluation_20250226-141922.gif))
 
 
 
