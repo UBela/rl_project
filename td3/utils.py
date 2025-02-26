@@ -36,5 +36,5 @@ def save_frames_as_gif(frames, path='./', filename='hockey_game.gif'):
     def animate(i):
         patch.set_data(frames[i])
 
-    anim = animation.FuncAnimation(plt.gcf(), animate, frames = len(frames), interval=10)
+    anim = animation.FuncAnimation(plt.gcf(), animate, frames = len(frames), interval=50)
     anim.save(path + filename, writer='imagemagick', fps=60)
