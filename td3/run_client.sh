@@ -32,8 +32,7 @@ cd /mnt/qb/work/ludwig/lqb122/rl_project/td3
 # Run your code
 echo "-------- PYTHON OUTPUT ----------"
 python3 ./run_client.py --server-url 'comprl.cs.uni-tuebingen.de' --server-port 65335 \
-    --token 'e2c1cb62-3887-446d-a549-857470b8a94d' 
-
+    --token 'ENTER-YOUR-TOKEN-HERE'
 
 
 # Check if Python script ran successfully
