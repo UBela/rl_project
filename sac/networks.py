@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-class ValueNetwork(nn.Module):
+'''class ValueNetwork(nn.Module):
     def __init__(self, state_dim, hidden_dim):
         super(ValueNetwork, self).__init__()
         self.layers = nn.Sequential(
@@ -13,24 +13,27 @@ class ValueNetwork(nn.Module):
         )
 
     def forward(self, state):
-        return self.layers(state)
+        return self.layers(state)'''
+
 
 def weights_init_(m):
     if isinstance(m, nn.Linear):
-        nn.init.xavier_uniform_(m.weight, gain=1)
+        nn.init.kaiming_uniform_(m.weight, nonlinearity='relu')
         nn.init.constant_(m.bias, 0)
 class QNetwork(nn.Module):
-      
+    '''
+    QNetwork to estimate action-value function Q(s,a)
+    
+    '''
     def __init__(self, state_dim, action_dim, hidden_sizes=[256, 256], lr=3e-4, weight_decay=0.0, lr_factor=0.5):
         super(QNetwork, self).__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        #if isinstance(hidden_sizes, int):
         layer_sizes = [18 + action_dim] + hidden_sizes + [1]
 
-            # Q1 architecture
+        # Q1 architecture
         self.q1_layers = nn.ModuleList([nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
 
-            # Q2 architecture
+        # Q2 architecture
         self.q2_layers = nn.ModuleList([nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
         self.apply(weights_init_)    
 
@@ -42,12 +45,12 @@ class QNetwork(nn.Module):
     def forward(self, state, action):
         x = torch.cat([state, action], dim=1)
         x1 = x
-        for layer in self.q1_layers[:-1]:
-            x1 = F.relu(layer(x1))
+        x1 = F.relu(self.q1_layers[0](x2))
+        x1 = F.relu(self.q1_layers[1](x2))
         x1 = self.q1_layers[-1](x1)
         x2 = x
-        for l in self.q2_layers[:-1]:
-            x2 = F.relu(l(x2))
+        x2 = F.relu(self.q2_layers[0](x2))
+        x2 = F.relu(self.q2_layers[1](x2))
         x2 = self.q2_layers[-1](x2)
         return x1, x2
     
@@ -55,6 +58,9 @@ class QNetwork(nn.Module):
         return self.loss_fn(q_values, target_q_values)
     
 class PolicyNetwork(nn.Module):
+    """
+    PolicyNetwork to generat actions based on state observations
+    """
     def __init__(self, state_dim, action_dim, action_space, hidden_dim, learning_rate, lr_milestones=[10000], lr_factor=0.5, reparam_noise=1e-6):
         super(PolicyNetwork, self).__init__()
 

@@ -15,6 +15,14 @@ from networks import *
 
 
 class SACAgent:
+    """
+    Soft Actor-Critic (SAC) agent.
+    Implements the SAC algorithm, an off-policy actor-critic method with entropy 
+    regularization to balance exploration and exploitation. Uses twin Q-networks 
+    to reduce overestimation bias, a target Q-network for stability, and an 
+    optional prioritized experience replay (PER). Supports automatic entropy 
+    tuning for adaptive exploration.
+    """
     def __init__(self, state_dim, action_space, config, action_dim=4):
         self.__dict__.update(config)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -22,7 +30,8 @@ class SACAgent:
         self.action_dim = action_dim
         self.hidden_dim = self.hidden_dim
         self.alpha_milestones = [10000]
-        # **Replay Buffer Initialisierung**
+       
+       # intialize replay buffer with or without prioritized experience replay
         if self.use_PER:
             self.replay_buffer = PriorityReplayBuffer(self.buffer_size, alpha=self.per_alpha, beta=self.per_beta)
             print("Prioritized Experience Replay")
@@ -30,6 +39,7 @@ class SACAgent:
             self.replay_buffer = ReplayBuffer(self.buffer_size)
             print("Standard Replay Buffer")
 
+        
         self.policy_net = PolicyNetwork(state_dim, self.action_dim, self.action_space, self.hidden_dim, self.policy_lr, self.lr_milestones)
         
         self.qnet1 = QNetwork(state_dim, self.action_dim, self.hidden_dim, self.q_lr)
@@ -42,10 +52,7 @@ class SACAgent:
         for target_param, param in zip(self.qnet_target.parameters(), self.qnet1.parameters()):
             target_param.data.copy_(param.data)
        
-        #self.qnet_target.load_state_dict(self.qnet1.state_dict())
-
         
-        # **Automatische Entropie-Anpassung**
         if self.automatic_entropy_tuning:
             self.target_entropy = -torch.tensor(self.action_dim).to(self.device)
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
@@ -80,6 +87,7 @@ class SACAgent:
     def store_transition(self, transition: tuple):
         self.replay_buffer.add_transition(transition)
 
+    # needed to match the PER implementation
     def act(self, state):
         return self.select_action(state, True) if self.evaluate else self.select_action(state)
 
@@ -100,14 +108,14 @@ class SACAgent:
         rewards = torch.FloatTensor(np.vstack(rewards)).to(self.device).squeeze(dim=1)
         dones = torch.FloatTensor(np.vstack(dones)).to(self.device).squeeze(dim=1)
 
-        # Berechne das Ziel-Q-Value mit Target-Q-Netzwerk
+    
         with torch.no_grad():
             next_state_action, next_state_log_pi, _, _ = self.policy_net.sample(next_states)
             q1_next_targ, q2_next_targ = self.qnet_target(next_states, next_state_action)
             min_qf_next_target = torch.min(q1_next_targ, q2_next_targ) - self.alpha * next_state_log_pi
             target_q = rewards + (1 - dones) * self.gamma * min_qf_next_target.squeeze()
 
-        # Berechne Q-Werte für das aktuelle Zustand-Aktionspaar
+        
         q1_pred, q2_pred = self.qnet1(states, actions)
         
         td_error = torch.abs(q1_pred.squeeze() - target_q.squeeze()).detach().cpu().numpy()
@@ -118,7 +126,7 @@ class SACAgent:
         q1_loss = self.qnet1.compute_loss(q1_pred.squeeze(), target_q)
         q2_loss = self.qnet_target.compute_loss(q2_pred.squeeze(), target_q)
         qf_loss = q1_loss+q1_loss
-        # Optimierung für Q1-Netzwerk
+       
         self.qnet1.optimizer.zero_grad()
         qf_loss.backward() 
         self.qnet1.optimizer.step()
@@ -134,13 +142,11 @@ class SACAgent:
         
         
 
-        # Berechne TD-Fehler für PER (falls aktiviert)
         
         avg_priority = np.mean(td_error) if self.use_PER else 0.0
         priority_min = np.min(td_error) if self.use_PER else 0.0
         priority_max = np.max(td_error) if self.use_PER else 0.0
 
-        # **Entropie-Update**
         if self.automatic_entropy_tuning:
             alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()
             self.alpha_optimizer.zero_grad()

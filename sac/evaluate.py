@@ -39,7 +39,7 @@ def evaluate(agent, env, opponent, max_episodes=100, max_timesteps=1000, render=
                 reward = reward_player_2(env) if not agent_is_player_1 else reward
 
                 total_reward += reward
-                touch_stats[i_episode] = max(touch_stats[i_episode], _info.get('reward_touch_puck', 0.0))  # Tracking von Puck-Touch
+                touch_stats[i_episode] = max(touch_stats[i_episode], _info.get('reward_touch_puck', 0.0)) 
 
                 ob_new_copy = ob_new  
                 if agent_is_player_1:
@@ -59,7 +59,7 @@ def evaluate(agent, env, opponent, max_episodes=100, max_timesteps=1000, render=
                         loses_per_episode[i_episode] = 1 if winner == 1 else 0
                     break
             
-            reward_stats[i_episode] = total_reward  # Speichert die Rewards pro Episode
+            reward_stats[i_episode] = total_reward 
 
     return reward_stats, touch_stats, wins_per_episode, loses_per_episode
 

@@ -19,8 +19,8 @@ from contextlib import redirect_stdout
 
 class SACTrainer:
     """
-    SACTrainer ist der Trainer für den SAC-Agenten. Er kümmert sich um das Training,
-    das Logging und das Speichern von Modellen.
+    SACTrainer for SAC agent. It handles the training of the agent and the logging.
+    
     """
 
     def __init__(self, logger, config):
@@ -36,7 +36,7 @@ class SACTrainer:
         else:
             self.replay_buffer = ReplayBuffer(config["buffer_size"])
 
-        # Log-Datei für Ergebnisse vorbereiten
+        # Log-Datei for results
         self.log_results_filename = f"results/{self._config['results_folder']}/evaluation_log.json"
         os.makedirs(os.path.dirname(self.log_results_filename), exist_ok=True)
         if not os.path.exists(self.log_results_filename):
@@ -56,10 +56,10 @@ class SACTrainer:
 
     def fill_replay_buffer(self, agent, env):
 
-        print("⏳ Filling replay buffer with random actions...")
+        print("Filling replay buffer with random actions...")
 
         with open(os.devnull, 'w') as f, redirect_stdout(f):  
-            with tqdm(total=self._config["buffer_size"], desc="⏳ Filling Replay Buffer", unit="samples") as pbar:
+            with tqdm(total=self._config["buffer_size"], desc="Filling Replay Buffer", unit="samples") as pbar:
                 while len(self.replay_buffer) < self._config["buffer_size"]:
                     ob, _ = env.reset()
                     obs_agent2 = env.obs_agent_two()
@@ -77,7 +77,9 @@ class SACTrainer:
                         ob = ob_new
                         obs_agent2 = env.obs_agent_two()
 
-        print(f"✅ Replay buffer filled with {len(self.replay_buffer)} samples.")
+        print(f"Replay buffer filled with {len(self.replay_buffer)} samples.")
+
+
     def train(self, agent, opponents, env, rurn_evaluation=True):
         rew_stats, q1_losses, q2_losses, actor_losses, alpha_losses = [], [], [], [], []
 
@@ -203,7 +205,6 @@ class SACTrainer:
                     'grad_updates': grad_updates}
                 self.logger.log_training(episode_counter, trainingmetrics)
                 self.logger.save_model(agent, episode_counter)
-                #self.logger.info(f"Episode {episode_counter} evaluation: {eval_stats}")
                 
 
             rew_stats.append(total_reward)
@@ -216,27 +217,6 @@ class SACTrainer:
         
         self.logger.info('Saving training statistics...')
 
-        # Plot reward
-        #self.logger.plot_running_mean(data=rew_stats, title='Total reward', filename='total-reward.pdf', show=False)
-
-        # Plot evaluation stats
-        #self.logger.plot_evaluation_stats(eval_stats, self._config['evaluate_every'], 'evaluation-won-lost.pdf')
-
-        # Plot losses
-        #for loss, title in zip([q1_losses, q2_losses, actor_losses, alpha_losses],
-                               #['Q1 loss', 'Q2 loss', 'Policy loss', 'Alpha loss']):
-            #self.logger.plot_running_mean(
-                #data=loss,
-                #title=title,
-                #filename=f'{title.replace(" ", "-")}.pdf',
-                #show=False,
-                #v_milestones=new_op_grad,
-            #)
-
-        # Save agent
         self.logger.save_model(agent, 'agent')
 
-        #if self.run_evaluation:
-            #agent.eval()
-            #agent._config['show'] = True
         evaluate(agent, env, h_env.BasicOpponent(weak=False), 200)
