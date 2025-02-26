@@ -11,11 +11,14 @@
 
 
 
-<h1>TD-MPC2 by Jonas Klötzl</span></h1>
+## TD-MPC2 by Jonas Klötzl
 
 [**Download Model Weights**](https://drive.google.com/drive/folders/1MkM6Q-X8fcvgn3UfaFKNzriIkRT1n-3p?usp=sharing)
 
 This codebase was used to train an TD-MPC2 agent for the Hockey Environment. Most important contribution is the `tdmpc2/envs/hockey.py` file containing the hockey environment and the wrapper. Smaller changes in `tdmpc2/envs/__init__.py`, `tdmpc2/train.py` and `tdmpc2/config.yaml`.
+
+- **TD-MPC2**  
+  ![Example Gameplay](tdmpc2/evaluation.gif)
 
 Run training with:
 ```
