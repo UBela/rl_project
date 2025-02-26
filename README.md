@@ -25,4 +25,4 @@ Run training with:
 $ python train.py task=hockey-NORMAL steps=150000
 ```
 ## SAC by Regine Lendway
-[** Download Model Weights**](https://drive.google.com/file/d/1RnPOH-9JXV2RaFibux4Pr5wUxUJjaLiu/view?usp=drive_link)
+[**Download Model Weights**](https://drive.google.com/file/d/1RnPOH-9JXV2RaFibux4Pr5wUxUJjaLiu/view?usp=drive_link)
