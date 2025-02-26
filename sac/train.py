@@ -41,9 +41,9 @@ parser.add_argument("--results_folder", type=str, default="results")
 
 # Prioritized Experience Replay (PER)
 parser.add_argument("--use_PER", action="store_true", default=False)
-parser.add_argument("--per_alpha", type=float, default=0.6)
+parser.add_argument("--per_alpha", type=float, default=0.3)
 parser.add_argument("--per_beta", type=float, default=0.4)
-parser.add_argument("--per_beta_update", type=float, default=None)
+parser.add_argument("--per_beta_update", type=float, default=0.0006)
 
 # SAC Hyperparameter
 parser.add_argument("--policy_lr", type=float, default=0.001)

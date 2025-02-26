@@ -5,6 +5,8 @@ from td3_agent import TD3Agent
 import pickle
 import matplotlib.pyplot as plt
 from DDPG import DDPGAgent
+from sac_agent import SACAgent
+from sac_trainer import SACTrainer
 import optparse
 import pickle
 def running_mean(x, N):

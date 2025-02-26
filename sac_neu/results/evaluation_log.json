@@ -1,0 +1,500 @@
+[
+    {
+        "episode": 20,
+        "win_rate": 0.2,
+        "loss_rate": 0.1,
+        "avg_reward": -29.529593851219722
+    },
+    {
+        "episode": 40,
+        "win_rate": 0.2,
+        "loss_rate": 0.05,
+        "avg_reward": -24.653276540249475
+    },
+    {
+        "episode": 60,
+        "win_rate": 0.2,
+        "loss_rate": 0.06666666666666667,
+        "avg_reward": -26.408074062792302
+    },
+    {
+        "episode": 80,
+        "win_rate": 0.1625,
+        "loss_rate": 0.1125,
+        "avg_reward": -28.12200514573784
+    },
+    {
+        "episode": 100,
+        "win_rate": 0.16,
+        "loss_rate": 0.11,
+        "avg_reward": -19.999254412720088
+    },
+    {
+        "episode": 120,
+        "win_rate": 0.2,
+        "loss_rate": 0.10833333333333334,
+        "avg_reward": -16.664133341167013
+    },
+    {
+        "episode": 140,
+        "win_rate": 0.2,
+        "loss_rate": 0.10714285714285714,
+        "avg_reward": -23.318221327577547
+    },
+    {
+        "episode": 160,
+        "win_rate": 0.2,
+        "loss_rate": 0.1125,
+        "avg_reward": -17.748541534642293
+    },
+    {
+        "episode": 180,
+        "win_rate": 0.17777777777777778,
+        "loss_rate": 0.12777777777777777,
+        "avg_reward": -34.24658262658797
+    },
+    {
+        "episode": 200,
+        "win_rate": 0.18,
+        "loss_rate": 0.13,
+        "avg_reward": -22.75282271994802
+    },
+    {
+        "episode": 220,
+        "win_rate": 0.17272727272727273,
+        "loss_rate": 0.13636363636363635,
+        "avg_reward": -32.85213115163303
+    },
+    {
+        "episode": 240,
+        "win_rate": 0.16666666666666666,
+        "loss_rate": 0.13333333333333333,
+        "avg_reward": -30.404136083021342
+    },
+    {
+        "episode": 260,
+        "win_rate": 0.1576923076923077,
+        "loss_rate": 0.12692307692307692,
+        "avg_reward": -31.54006881988869
+    },
+    {
+        "episode": 280,
+        "win_rate": 0.15357142857142858,
+        "loss_rate": 0.125,
+        "avg_reward": -26.620733228592172
+    },
+    {
+        "episode": 300,
+        "win_rate": 0.15,
+        "loss_rate": 0.12333333333333334,
+        "avg_reward": -25.762431998908756
+    },
+    {
+        "episode": 20,
+        "win_rate": 0.1,
+        "loss_rate": 0.05,
+        "avg_reward": -30.524508855838327
+    },
+    {
+        "episode": 40,
+        "win_rate": 0.1,
+        "loss_rate": 0.125,
+        "avg_reward": -25.688351527651996
+    },
+    {
+        "episode": 60,
+        "win_rate": 0.13333333333333333,
+        "loss_rate": 0.1,
+        "avg_reward": -20.379735332582044
+    },
+    {
+        "episode": 80,
+        "win_rate": 0.1125,
+        "loss_rate": 0.1,
+        "avg_reward": -28.79794526799112
+    },
+    {
+        "episode": 100,
+        "win_rate": 0.12,
+        "loss_rate": 0.11,
+        "avg_reward": -20.646710684505027
+    },
+    {
+        "episode": 20,
+        "win_rate": 0.1,
+        "loss_rate": 0.1,
+        "avg_reward": -33.06808748606689
+    },
+    {
+        "episode": 40,
+        "win_rate": 0.1,
+        "loss_rate": 0.2,
+        "avg_reward": -18.53809895102926
+    },
+    {
+        "episode": 60,
+        "win_rate": 0.1,
+        "loss_rate": 0.21666666666666667,
+        "avg_reward": -30.6344429164826
+    },
+    {
+        "episode": 80,
+        "win_rate": 0.125,
+        "loss_rate": 0.2125,
+        "avg_reward": -22.35468806969198
+    },
+    {
+        "episode": 100,
+        "win_rate": 0.14,
+        "loss_rate": 0.19,
+        "avg_reward": -23.742445572418212
+    },
+    {
+        "episode": 120,
+        "win_rate": 0.13333333333333333,
+        "loss_rate": 0.225,
+        "avg_reward": -24.01602125420952
+    },
+    {
+        "episode": 140,
+        "win_rate": 0.12857142857142856,
+        "loss_rate": 0.2357142857142857,
+        "avg_reward": -24.91817346580594
+    },
+    {
+        "episode": 160,
+        "win_rate": 0.14375,
+        "loss_rate": 0.23125,
+        "avg_reward": -19.84334967405846
+    },
+    {
+        "episode": 180,
+        "win_rate": 0.18333333333333332,
+        "loss_rate": 0.21666666666666667,
+        "avg_reward": -18.67481575388159
+    },
+    {
+        "episode": 200,
+        "win_rate": 0.18,
+        "loss_rate": 0.205,
+        "avg_reward": -18.77034957968177
+    },
+    {
+        "episode": 220,
+        "win_rate": 0.17727272727272728,
+        "loss_rate": 0.19090909090909092,
+        "avg_reward": -20.26092487326437
+    },
+    {
+        "episode": 240,
+        "win_rate": 0.17083333333333334,
+        "loss_rate": 0.20416666666666666,
+        "avg_reward": -20.429617601054247
+    },
+    {
+        "episode": 260,
+        "win_rate": 0.16923076923076924,
+        "loss_rate": 0.2153846153846154,
+        "avg_reward": -24.779257881532008
+    },
+    {
+        "episode": 280,
+        "win_rate": 0.16785714285714284,
+        "loss_rate": 0.225,
+        "avg_reward": -23.62980212913768
+    },
+    {
+        "episode": 300,
+        "win_rate": 0.17333333333333334,
+        "loss_rate": 0.23,
+        "avg_reward": -17.419650752790538
+    },
+    {
+        "episode": 20,
+        "win_rate": 0.2,
+        "loss_rate": 0.2,
+        "avg_reward": -25.264992839581105
+    },
+    {
+        "episode": 40,
+        "win_rate": 0.225,
+        "loss_rate": 0.2,
+        "avg_reward": -16.926467892560698
+    },
+    {
+        "episode": 60,
+        "win_rate": 0.2833333333333333,
+        "loss_rate": 0.18333333333333332,
+        "avg_reward": -22.551210866742235
+    },
+    {
+        "episode": 80,
+        "win_rate": 0.275,
+        "loss_rate": 0.15,
+        "avg_reward": -21.09020135288776
+    },
+    {
+        "episode": 100,
+        "win_rate": 0.28,
+        "loss_rate": 0.18,
+        "avg_reward": -20.382370290871826
+    },
+    {
+        "episode": 120,
+        "win_rate": 0.25833333333333336,
+        "loss_rate": 0.18333333333333332,
+        "avg_reward": -19.33893566658218
+    },
+    {
+        "episode": 140,
+        "win_rate": 0.2357142857142857,
+        "loss_rate": 0.21428571428571427,
+        "avg_reward": -21.014689176608233
+    },
+    {
+        "episode": 20,
+        "win_rate": 0.1,
+        "loss_rate": 0.0,
+        "avg_reward": -27.480595933519776
+    },
+    {
+        "episode": 20,
+        "win_rate": 0.1,
+        "loss_rate": 0.05,
+        "avg_reward": -24.11003166916968
+    },
+    {
+        "episode": 40,
+        "win_rate": 0.125,
+        "loss_rate": 0.1,
+        "avg_reward": -27.251780559440824
+    },
+    {
+        "episode": 60,
+        "win_rate": 0.1,
+        "loss_rate": 0.1,
+        "avg_reward": -22.495316775806234
+    },
+    {
+        "episode": 80,
+        "win_rate": 0.075,
+        "loss_rate": 0.125,
+        "avg_reward": -27.154301474863427
+    },
+    {
+        "episode": 100,
+        "win_rate": 0.09,
+        "loss_rate": 0.12,
+        "avg_reward": -28.11388853115222
+    },
+    {
+        "episode": 20,
+        "win_rate": 0.05,
+        "loss_rate": 0.05,
+        "avg_reward": -31.86720743287662
+    },
+    {
+        "episode": 40,
+        "win_rate": 0.15,
+        "loss_rate": 0.075,
+        "avg_reward": -33.61819849428414
+    },
+    {
+        "episode": 20,
+        "win_rate": 0.15,
+        "loss_rate": 0.25,
+        "avg_reward": -26.889766936650222
+    },
+    {
+        "episode": 40,
+        "win_rate": 0.1,
+        "loss_rate": 0.2,
+        "avg_reward": -33.99847619462018
+    },
+    {
+        "episode": 60,
+        "win_rate": 0.06666666666666667,
+        "loss_rate": 0.16666666666666666,
+        "avg_reward": -37.18923062633822
+    },
+    {
+        "episode": 80,
+        "win_rate": 0.05,
+        "loss_rate": 0.1625,
+        "avg_reward": -37.10258571896685
+    },
+    {
+        "episode": 100,
+        "win_rate": 0.06,
+        "loss_rate": 0.17,
+        "avg_reward": -35.09640049897475
+    },
+    {
+        "episode": 120,
+        "win_rate": 0.06666666666666667,
+        "loss_rate": 0.14166666666666666,
+        "avg_reward": -35.00726553510791
+    },
+    {
+        "episode": 140,
+        "win_rate": 0.06428571428571428,
+        "loss_rate": 0.15714285714285714,
+        "avg_reward": -34.06569068501875
+    },
+    {
+        "episode": 160,
+        "win_rate": 0.0625,
+        "loss_rate": 0.1625,
+        "avg_reward": -28.52051462326051
+    },
+    {
+        "episode": 180,
+        "win_rate": 0.07777777777777778,
+        "loss_rate": 0.17222222222222222,
+        "avg_reward": -33.89082701206931
+    },
+    {
+        "episode": 200,
+        "win_rate": 0.08,
+        "loss_rate": 0.165,
+        "avg_reward": -30.922472518363435
+    },
+    {
+        "episode": 220,
+        "win_rate": 0.07727272727272727,
+        "loss_rate": 0.16818181818181818,
+        "avg_reward": -28.52011083921646
+    },
+    {
+        "episode": 240,
+        "win_rate": 0.075,
+        "loss_rate": 0.16666666666666666,
+        "avg_reward": -35.217556683092326
+    },
+    {
+        "episode": 260,
+        "win_rate": 0.06923076923076923,
+        "loss_rate": 0.1576923076923077,
+        "avg_reward": -31.198032060628556
+    },
+    {
+        "episode": 280,
+        "win_rate": 0.07142857142857142,
+        "loss_rate": 0.15,
+        "avg_reward": -34.77064269803881
+    },
+    {
+        "episode": 300,
+        "win_rate": 0.07333333333333333,
+        "loss_rate": 0.14,
+        "avg_reward": -33.16701165996123
+    },
+    {
+        "episode": 20,
+        "win_rate": 0.15,
+        "loss_rate": 0.0,
+        "avg_reward": -23.089463946742207
+    },
+    {
+        "episode": 40,
+        "win_rate": 0.2,
+        "loss_rate": 0.1,
+        "avg_reward": -16.39501988779586
+    },
+    {
+        "episode": 60,
+        "win_rate": 0.15,
+        "loss_rate": 0.08333333333333333,
+        "avg_reward": -25.126453321056935
+    },
+    {
+        "episode": 20,
+        "win_rate": 0.05,
+        "loss_rate": 0.35,
+        "avg_reward": -29.230667369648888
+    },
+    {
+        "episode": 40,
+        "win_rate": 0.05,
+        "loss_rate": 0.325,
+        "avg_reward": -38.719313121691854
+    },
+    {
+        "episode": 60,
+        "win_rate": 0.08333333333333333,
+        "loss_rate": 0.35,
+        "avg_reward": -29.809812371414136
+    },
+    {
+        "episode": 80,
+        "win_rate": 0.0625,
+        "loss_rate": 0.4125,
+        "avg_reward": -21.152772472331055
+    },
+    {
+        "episode": 100,
+        "win_rate": 0.07,
+        "loss_rate": 0.41,
+        "avg_reward": -30.979270297709167
+    },
+    {
+        "episode": 120,
+        "win_rate": 0.06666666666666667,
+        "loss_rate": 0.4166666666666667,
+        "avg_reward": -35.76073391044197
+    },
+    {
+        "episode": 140,
+        "win_rate": 0.07857142857142857,
+        "loss_rate": 0.4142857142857143,
+        "avg_reward": -32.912673902726326
+    },
+    {
+        "episode": 160,
+        "win_rate": 0.075,
+        "loss_rate": 0.425,
+        "avg_reward": -29.83551604405151
+    },
+    {
+        "episode": 180,
+        "win_rate": 0.07222222222222222,
+        "loss_rate": 0.4222222222222222,
+        "avg_reward": -27.52756496264292
+    },
+    {
+        "episode": 200,
+        "win_rate": 0.07,
+        "loss_rate": 0.425,
+        "avg_reward": -31.813150255561226
+    },
+    {
+        "episode": 220,
+        "win_rate": 0.07272727272727272,
+        "loss_rate": 0.42272727272727273,
+        "avg_reward": -29.28893912134284
+    },
+    {
+        "episode": 240,
+        "win_rate": 0.07083333333333333,
+        "loss_rate": 0.425,
+        "avg_reward": -29.754740461889263
+    },
+    {
+        "episode": 260,
+        "win_rate": 0.06923076923076923,
+        "loss_rate": 0.4269230769230769,
+        "avg_reward": -33.50592529299821
+    },
+    {
+        "episode": 280,
+        "win_rate": 0.06785714285714285,
+        "loss_rate": 0.425,
+        "avg_reward": -33.25351746657371
+    },
+    {
+        "episode": 300,
+        "win_rate": 0.06666666666666667,
+        "loss_rate": 0.4266666666666667,
+        "avg_reward": -31.278737021102778
+    }
+]

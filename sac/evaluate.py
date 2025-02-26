@@ -10,8 +10,8 @@ def evaluate(agent, env, opponent, max_episodes=100, max_timesteps=1000, render=
     
     wins_per_episode = np.zeros(max_episodes + 1)
     loses_per_episode = np.zeros(max_episodes + 1)
-    touch_stats = np.zeros(max_episodes + 1)  # Neu hinzugefügt
-    reward_stats = np.zeros(max_episodes + 1)  # Neu hinzugefügt
+    touch_stats = np.zeros(max_episodes + 1) 
+    reward_stats = np.zeros(max_episodes + 1)  
     
     for i_episode in range(1, max_episodes + 1):
         ob, _ = env.reset()

@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     # Agent laden
     print(f"📥 Lade Agent aus 19570.pth")
-    agent = load_agent(r"C:\Users\regin\Documents\Winter24_25\rl_project\sac\logs\agents\agent.pth", state_dim, action_space, config)
+    agent = load_agent(r"C:\Users\regin\Documents\Winter24_25\rl_project\sac\logs\agents\500.pth", state_dim, action_space, config)
     print("✅ Modell erfolgreich geladen!")
 
     # Gegner erstellen

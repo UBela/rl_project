@@ -1,0 +1,14 @@
+[
+    {
+        "episode": 20,
+        "win_rate": 0.1,
+        "loss_rate": 0.35,
+        "avg_reward": -33.746142856090884
+    },
+    {
+        "episode": 40,
+        "win_rate": 0.075,
+        "loss_rate": 0.475,
+        "avg_reward": -25.509052731546134
+    }
+]

@@ -30,7 +30,7 @@ class SACTrainer:
         self.total_gradient_steps = 0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        # Replay Buffer initialisieren (mit oder ohne Prioritized Experience Replay)
+       
         if config["use_PER"]:
             self.replay_buffer = PriorityReplayBuffer(config["buffer_size"], alpha=config["per_alpha"], beta=config["per_beta"])
         else:
@@ -58,7 +58,7 @@ class SACTrainer:
 
         print("⏳ Filling replay buffer with random actions...")
 
-        with open(os.devnull, 'w') as f, redirect_stdout(f):  # 🛑 Unterdrückt alle Prints
+        with open(os.devnull, 'w') as f, redirect_stdout(f):  
             with tqdm(total=self._config["buffer_size"], desc="⏳ Filling Replay Buffer", unit="samples") as pbar:
                 while len(self.replay_buffer) < self._config["buffer_size"]:
                     ob, _ = env.reset()
