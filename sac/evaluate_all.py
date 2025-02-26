@@ -9,7 +9,7 @@ from sac_agent import SACAgent
 
 # Parameters
 NUM_GAMES = 100  # Number of test games
-SAVE_PLOT_PATH = "./logs/evaluation.png"  # Path to save evaluation plot
+SAVE_PLOT_PATH = r"logs\evaluation.png"  # Path to save evaluation plot
 
 # Load agent function
 def load_agent(pth_path, state_dim, action_space, config):
@@ -61,9 +61,11 @@ if __name__ == "__main__":
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Evaluate SAC agent models.")
     parser.add_argument("--model_dir", type=str, default="logs/agents", help="Path to saved models")
+    parser.add_argument("--skip", type=int, default=10, help="Evaluate every Nth model (default: 10)")
     args = parser.parse_args()
 
     MODEL_DIR = args.model_dir
+    SKIP_NTH = args.skip
 
     # Initialize Hockey environment
     env = h_env.HockeyEnv(mode=h_env.Mode.NORMAL)
@@ -131,7 +133,7 @@ if __name__ == "__main__":
 
     # Ensure the directory exists
     if not os.path.exists(MODEL_DIR):
-        print(f"Error: Model directory '{MODEL_DIR}' not found!")
+        print(f"❌ Error: Model directory '{MODEL_DIR}' not found!")
         exit(1)
 
     # Sort models by training step number (assuming file format is like '10000.pth')
@@ -140,8 +142,11 @@ if __name__ == "__main__":
         key=lambda x: int(x.split('.')[0])
     )
 
-    if not model_files:
-        print(f"No model files found in '{MODEL_DIR}'!")
+    # Filter models to evaluate only every Nth episode
+    filtered_model_files = [f for f in model_files if int(f.split('.')[0]) % SKIP_NTH == 0]
+
+    if not filtered_model_files:
+        print(f"❌ No model files matching the skip condition found in '{MODEL_DIR}'!")
         exit(1)
 
     # Data storage for plots
@@ -149,10 +154,10 @@ if __name__ == "__main__":
     win_rates_weak, loss_rates_weak, draw_rates_weak = [], [], []
     win_rates_strong, loss_rates_strong, draw_rates_strong = [], [], []
 
-    print(f"Evaluating {len(model_files)} models...")
+    print(f"📝 Evaluating {len(filtered_model_files)} models...")
 
     # Evaluate each saved model with tqdm progress bar
-    for model_file in tqdm(model_files, desc="Evaluating Models", unit="model"):
+    for model_file in tqdm(filtered_model_files, desc="Evaluating Models", unit="model"):
         model_path = os.path.join(MODEL_DIR, model_file)
         episode_number = int(model_file.split('.')[0])  # Extract training step number
 
@@ -200,4 +205,4 @@ if __name__ == "__main__":
     plt.savefig(SAVE_PLOT_PATH)
     plt.show()
 
-    print(f"\n Plot saved at: {SAVE_PLOT_PATH}")
+    print(f"\n📊 Plot saved at: {SAVE_PLOT_PATH}")
