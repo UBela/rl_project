@@ -9,7 +9,7 @@ from sac_agent import SACAgent
 
 # Parameters
 NUM_GAMES = 100  # Number of test games
-SAVE_PLOT_PATH = r"logs\evaluation.png"  # Path to save evaluation plot
+SAVE_PLOT_PATH = "./logs/evaluation.png"  # Path to save evaluation plot
 
 # Load agent function
 def load_agent(pth_path, state_dim, action_space, config):
@@ -60,7 +60,7 @@ def test_agent(agent, env, opponent, num_games=NUM_GAMES):
 if __name__ == "__main__":
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Evaluate SAC agent models.")
-    parser.add_argument("--model_dir", type=str, default="logs/agents", help="Path to saved models")
+    parser.add_argument("--model_dir", type=str, default="./logs/agents", help="Path to saved models")
     parser.add_argument("--skip", type=int, default=10, help="Evaluate every Nth model (default: 10)")
     args = parser.parse_args()
 
